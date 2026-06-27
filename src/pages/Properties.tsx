@@ -1,7 +1,6 @@
 
 import { useApi } from '@/hooks/useApi';
   import { propertiesApi } from '@/service/userApi';
-import { Label } from '@radix-ui/react-label';
   import{ useState } from 'react'
 import { Link } from 'react-router-dom';
 import { Dialog } from "@/components/ui/Dialog";
@@ -17,6 +16,7 @@ import { Plus } from 'lucide-react';
 import { Property, useUser } from '@/userContext';
 import { Loading } from '@/components/Loading';
 import { Error } from '@/components/Error';
+import { Label } from '@/components/ui/Label';
 
 
   export const Properties = () => {
@@ -107,7 +107,7 @@ import { Error } from '@/components/Error';
                   />
                 </div>
               </ContentInput>
-              <Label>Photo</Label>
+              <Label htmlFor="img">Photo</Label>
               <ImageUpload
                 onUploadSuccess={(name) => setImgUrl(name)}
               />

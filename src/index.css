@@ -1,7 +1,5 @@
 @import "tailwindcss";
 
-@custom-variant dark (&:is(.dark *));
-
 @layer base {
   :root {
     @apply text-[rgba(19,19,19,0.87)] bg-[#ebe7e7] font-sans;
