@@ -15,10 +15,12 @@ export default function ProtectedLayout() {
             .then((res) => { if (!res.ok) throw new Error(); return res.json(); })
             .then((data) => {
                 setUser(data);
-                return fetch("/api/properties", { credentials: "include" });
+                // fetch properties séparé, ne bloque pas le user
+                fetch("/api/properties", { credentials: "include" })
+                    .then((res) => { if (!res.ok) throw new Error(); return res.json(); })
+                    .then((data) => setProperties(data))
+                    .catch((e) => console.error("properties error", e))
             })
-            .then((res) => res.json())
-            .then((data) => setProperties(data))
             .catch(() => setUser(null))
             .finally(() => setLoading(false));
     }, []);
