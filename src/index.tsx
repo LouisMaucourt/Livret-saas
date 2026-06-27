@@ -7,6 +7,7 @@ import { Resend } from "resend";
 import { Email } from "./components/ui/EmailRegister";
 import { verifyAuth } from "./middleware";
 
+
 const unauthorized = () =>
   Response.json({ error: "Accès refusé" }, { status: 401 });
 
