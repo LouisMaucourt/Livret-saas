@@ -1,8 +1,9 @@
 FROM oven/bun:1
 
-WORKDIR /app
+WORKDIR /
 
-COPY package.json bun.lock ./
+COPY . .
+
 RUN bun install
 
 COPY . .

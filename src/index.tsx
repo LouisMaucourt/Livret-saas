@@ -176,7 +176,6 @@ const server = serve({
     },
     "/api/auth/register": {
       async POST(req) {
-        if (!verifyAuth(req)) return unauthorized()
         const body = await req.json();
 
         if (!body.email || !body.password) {
