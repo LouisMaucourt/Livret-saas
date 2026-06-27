@@ -179,11 +179,7 @@ export const InformationPage = () => {
                                         <ContentInput>
                                           <Label htmlFor="img">Photo</Label>
                                           <ImageUpload
-                                            bgImage={
-                                              imgUrl
-                                                ? `http://localhost:3000/images/${imgUrl}`
-                                                : undefined
-                                            }
+                                            bgImage={imgUrl ? `/images/${imgUrl}` : undefined}
                                             className="h-40"
                                             onUploadSuccess={(name) =>
                                               setImgUrl(name)
