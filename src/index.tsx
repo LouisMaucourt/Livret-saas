@@ -235,7 +235,6 @@ const server = serve({
     },
     "/api/auth/register/token": {
       async POST(req) {
-        if (!verifyAuth(req)) return unauthorized()
         const body = await req.json()
         const token = body.token
 
