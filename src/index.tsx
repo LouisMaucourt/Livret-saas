@@ -608,12 +608,10 @@ const server = serve({
         const userId = (user as any).id
 
         const properties = await sql`
-          SELECT DISTINCT p.*
-          FROM properties p
-          LEFT JOIN property_clients pc ON pc.property_id = p.id
-          WHERE p.owner_id = ${userId} OR pc.user_id = ${userId}
-          ORDER BY p.created_at DESC
-        `;
+        SELECT * FROM properties
+        WHERE owner_id = ${userId}
+        ORDER BY created_at DESC
+    `;
         return Response.json(properties);
       },
       async POST(req) {
