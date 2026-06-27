@@ -5,7 +5,7 @@ import jwt from "jsonwebtoken";
 import { getCookieServer } from "./utilis/cookies";
 import { Resend } from "resend";
 import { Email } from "./components/ui/EmailRegister";
-import { verifyApiKey, verifyAuth } from "./middleware";
+import { verifyAuth } from "./middleware";
 const unauthorized = () =>
   Response.json({ error: "Accès refusé" }, { status: 401 });
 
