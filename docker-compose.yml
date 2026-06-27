@@ -29,12 +29,6 @@ services:
     networks:
       - dokploy-network
     command: sh -c "sleep 5 && bun run db:migrate && bun src/index.tsx"
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.booklet.rule=Host(`livret.louismaucourt.fun`)"
-      - "traefik.http.routers.booklet.entrypoints=websecure"
-      - "traefik.http.routers.booklet.tls.certResolver=letsencrypt"
-      - "traefik.http.services.booklet.loadbalancer.server.port=3000"
 
 networks:
   dokploy-network:

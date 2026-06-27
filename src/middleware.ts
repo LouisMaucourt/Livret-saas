@@ -1,9 +1,6 @@
 import jwt from "jsonwebtoken";
 
 export const verifyApiKey = (req: Request): boolean => {
-  const apiKey = req.headers.get("x-api-key");
-  if (apiKey) return apiKey === process.env.API_KEY;
-
   const origin = req.headers.get("origin");
   const referer = req.headers.get("referer");
   const base = process.env.BASE_URL ?? "http://localhost:3000";
