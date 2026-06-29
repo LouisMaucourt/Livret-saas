@@ -38,7 +38,7 @@ export default function OwnerDashboard({ children }: { children: React.ReactNode
     }
     return (
         <div className="flex">
-            <div className="w-52 shrink-0" /> {/* div vide pour réserver l'espace */}
+            <div className="w-52 shrink-0" />
 
             <div className="fixed left-0 top-0 h-screen w-52 flex flex-col justify-between p-3
         bg-white/55 backdrop-blur-xl border-r border-black/[0.06] z-10">
