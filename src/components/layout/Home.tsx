@@ -27,8 +27,8 @@ type HomeProps = {
 
 export const Home = ({ onRefreshReady }: HomeProps) => {
   const { id } = useParams()
-  console.log(id)
   const { data, refresh } = useApi(() => getSectionApi(id))
+  console.log(data)
 
   useEffect(() => {
     onRefreshReady?.(refresh)
@@ -38,6 +38,7 @@ export const Home = ({ onRefreshReady }: HomeProps) => {
     .filter((s) => s.is_visible)
     .sort((a, b) => a.sort_order - b.sort_order)
 
+    console.log(data)
   const buttons = sections.flatMap((s, si) => {
     const configs = SECTION_CONFIG[s.type]
     if (!configs) return []

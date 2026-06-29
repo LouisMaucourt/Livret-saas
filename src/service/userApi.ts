@@ -1,6 +1,6 @@
 
-export const infosApi = async (id: string | undefined) => {
-    const res = await fetch(`/api/infos?id=${id}`)
+export const infosApi = async (id: string | undefined, lang = 'fr'  ) => {
+    const res = await fetch(`/api/infos?id=${id}&lang=${lang}`)
     return res.json()
 }
 export const userApi = async () => {

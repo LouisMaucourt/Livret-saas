@@ -7,7 +7,7 @@ import { Error } from '@/components/Error'
 export const ScanPage = () => {
     const navigate = useNavigate()
     const [searchParams] = useSearchParams()
-    const { setClient } = useUser()
+    const { setClient, setLang } = useUser()
     const [error, setError] = useState<string | null>(null)
 
     useEffect(() => {
@@ -19,12 +19,12 @@ export const ScanPage = () => {
             .then(client => {
                 if (client.error) { setError(client.error); return }
                 setClient(client)
+                if (client.language) setLang(client.language)
                 navigate(`/properties/${client.property_id}`)
             })
             .catch(() => setError("Erreur de connexion"))
     }, [])
 
     if (error) return <Error message={error} />
-
     return <Loading />
 }

@@ -2,8 +2,7 @@ import { Navigate, Outlet } from "react-router";
 import { useEffect, useState } from "react";
 import OwnerDashboard from "./Dashboard";
 import { useUser } from "@/userContext";
-
-import { ClientLayout } from "./ClientLayout";
+import { TestLayout } from "./TestLayout";
 
 
 export default function ProtectedLayout() {
@@ -15,11 +14,19 @@ export default function ProtectedLayout() {
             .then((res) => { if (!res.ok) throw new Error(); return res.json(); })
             .then((data) => {
                 setUser(data);
-                // fetch properties séparé, ne bloque pas le user
-                fetch("/api/properties", { credentials: "include" })
-                    .then((res) => { if (!res.ok) throw new Error(); return res.json(); })
-                    .then((data) => setProperties(data))
-                    .catch((e) => console.error("properties error", e))
+
+                if (data.role === 'guest') {
+                    const propertyId = data.property_id
+                    fetch(`/api/properties/${propertyId}/public`, { credentials: "include" })
+                        .then(res => res.json())
+                        .then(property => setProperties([property]))
+                        .catch(e => console.error(e))
+                } else {
+                    fetch("/api/properties", { credentials: "include" })
+                        .then(res => res.json())
+                        .then(data => setProperties(data))
+                        .catch(e => console.error(e))
+                }
             })
             .catch(() => setUser(null))
             .finally(() => setLoading(false));
@@ -31,7 +38,7 @@ export default function ProtectedLayout() {
 
     const layouts = {
         owner: OwnerDashboard,
-        guest: ClientLayout,
+        guest: TestLayout,
     };
     const Layout = layouts[user.role] ?? OwnerDashboard;
 

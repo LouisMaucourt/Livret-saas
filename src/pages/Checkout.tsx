@@ -17,10 +17,12 @@ import { useApi } from '@/hooks/useApi'
 import { usePostApi } from '@/hooks/usePostApi';
 import { stayDetailsApi } from '@/service/userApi'
 import { formatHour } from '@/utilis/formatHour';
-import { da } from 'date-fns/locale';
 import { Building2, DoorOpen, KeyRound, LogIn, LogOut, Smartphone, KeySquare, DoorClosed, Edit, Plus } from 'lucide-react'
 import React, { useEffect, useState } from 'react'
 import { useParams } from "react-router-dom"
+import { StayDetails } from './Checkin';
+import { useUser } from '@/userContext';
+import { setI18nValue } from '@/lib/utilis';
 
 const ACCESS_TYPES = [
     { value: 'physical_key', label: 'Clé physique', icon: <KeyRound size={18} /> },
@@ -31,26 +33,21 @@ const ACCESS_TYPES = [
 ]
 export const Checkout = () => {
     const { id } = useParams()
-    type StayDetails = {
-        section_id: string
-        checkin: string | null
-        checkout: string | null
-        instructions: string | null
-        instructions_leave:string |null
-        key_access_type: string | null
-        key_access_info: string | null
-    }
-    
+    const { lang } = useUser()
+
     const { data, loading, error, refresh } = useApi<StayDetails[]>(() => stayDetailsApi(id))
+
+    useEffect(() => {
+        refresh()
+    }, [lang])
 
     const { post, errorPost, loadingPost } = usePostApi()
 
     const [checkOutTime, setCheckOutTime] = useState("")
-    const [instructionLeave, setInstructionLeave] = useState("")
-    
+    const [instructionLeaveI18n, setInstructionLeaveI18n] = useState("")
+
     const [keyInfo, setKeyInfo] = useState("")
     const [keyAccessType, setKeyAccessType] = useState(ACCESS_TYPES[0].value)
-
 
     const checkIn = data?.[0]
     const hasData = !!checkIn?.checkout
@@ -58,10 +55,10 @@ export const Checkout = () => {
     useEffect(() => {
         if (!checkIn) return
         setCheckOutTime(checkIn.checkout ?? "")
-        setInstructionLeave(checkIn.instructions_leave ?? "")
+        setInstructionLeaveI18n(checkIn.instructions_leave_i18n?.[lang] ?? "")
         setKeyInfo(checkIn.key_access_info ?? "")
         setKeyAccessType(checkIn.key_access_type ?? ACCESS_TYPES[0].value)
-    }, [checkIn?.section_id])
+    }, [checkIn?.section_id, lang])
 
 
     const handleCheckin = async (e: React.FormEvent, close: () => void) => {
@@ -71,7 +68,11 @@ export const Checkout = () => {
             {
                 sectionId: checkIn?.section_id,
                 checkOut: checkOutTime,
-                instructionLeave,
+                instructions_leave_i18n: setI18nValue(
+                    checkIn?.instructions_leave_i18n,
+                    lang,
+                    instructionLeaveI18n
+                ),
                 keyAccessType,
                 keyInfo,
             },
@@ -87,39 +88,40 @@ export const Checkout = () => {
                 <ClientLayout />
                 {!hasData ? (
                     <div className="h-full my-auto flex justify-center items-center -mt-20">
-                    <IconTitle title="Ajouter les informations de départ" icon={DoorClosed} />
+                        <IconTitle title="Ajouter les informations de départ" icon={DoorClosed} />
                     </div>
                 ) : (
                     <div className="p-3">
-                            <IconTitle title="Départ" icon={DoorClosed} />
+                        <IconTitle title="Départ" icon={DoorClosed} />
                         <InfoSection title="Horaire">
-                                <InfoRow icon={LogOut} nameRow="Départ" valueRow={formatHour(checkIn.checkout ?? "")} />
+                            <InfoRow icon={LogOut} nameRow="Départ" valueRow={formatHour(checkIn.checkout ?? "")} />
                         </InfoSection>
-
-                            {checkIn.instructions_leave && (
-                                <InfoSection title="Instruction de départ ">
-                                    <InfoRow valueRow={checkIn.instructions_leave} />
+                            {checkIn.instructions_leave_i18n?.[lang] && (
+                                <InfoSection title="Instruction d'arrivée">
+                                    <div className="relative">
+                                        <InfoRow valueRow={checkIn.instructions_leave_i18n?.[lang]} />
+                                    </div>
                                 </InfoSection>
                             )}
                     </div>
                 )}
-                </ConditionalPhone>
+            </ConditionalPhone>
 
-            <Dialog trigger={<Button  size="big" icon={hasData ? <Edit /> : <Plus />} variant="absolute">{hasData ? 'Modifier' : 'Ajouter'}</Button>} title="Check-in">
+            <Dialog trigger={<Button size="big" icon={hasData ? <Edit /> : <Plus />} variant="absolute">{hasData ? 'Modifier' : 'Ajouter'}</Button>} title="Check-in">
                 {({ close }) => (
                     <Form onSubmit={(e) => handleCheckin(e, close)} className="p-4 space-y-4">
 
-                            <ContentInput>
-                                <Label htmlFor="checkout-time">Heure de départ</Label>
-                                <Input id="checkout-time" type="time" value={checkOutTime}
-                                    onChange={(e) => setCheckOutTime(e.target.value)} />
-                            </ContentInput>
+                        <ContentInput>
+                            <Label htmlFor="checkout-time">Heure de départ</Label>
+                            <Input id="checkout-time" type="time" value={checkOutTime}
+                                onChange={(e) => setCheckOutTime(e.target.value)} />
+                        </ContentInput>
 
                         <ContentInput>
                             <Label htmlFor="instructions">Instructions de départ</Label>
-                            <Textarea id="instructions" value={instructionLeave}
+                            <Textarea id="instructions" value={instructionLeaveI18n}
                                 placeholder="ex : Sonnez à l'interphone, appartement 3B…"
-                                onChange={(e) => setInstructionLeave(e.target.value)} />
+                                onChange={(e) => setInstructionLeaveI18n(e.target.value)} />
                         </ContentInput>
 
                         {errorPost && <p className="text-red-500 text-sm">{errorPost}</p>}

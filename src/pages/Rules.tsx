@@ -12,16 +12,24 @@ import { InfoRow } from "@/components/ui/InfoRow"
 import { InfoSection } from "@/components/ui/InfoSection"
 import { Input } from "@/components/ui/Input"
 import { Label } from "@/components/ui/Label"
+import { LangBadge } from "@/components/ui/LangBadge";
 import { Textarea } from "@/components/ui/Textarea"
 import { useApi } from "@/hooks/useApi"
 import { usePostApi } from "@/hooks/usePostApi"
+import { setI18nValue } from "@/lib/utilis";
 import { getRulesApi } from "@/service/userApi"
+import { useUser } from "@/userContext";
 import { AlarmSmoke, BookText, Edit, PartyPopper } from "lucide-react"
 import { useEffect, useState } from "react"
 import { useLocation, useParams } from "react-router"
 
 export const Rules = () => {
     const { id } = useParams()
+    const { lang } = useUser()
+
+    useEffect(() => {
+        refresh()
+    }, [lang])
 
     const { data, error, loading, refresh } = useApi(() => getRulesApi(id))
     const { post, errorPost, loadingPost } = usePostApi()
@@ -33,16 +41,16 @@ export const Rules = () => {
     const [smokingAllowed, setSmokingAllowed] = useState(false)
     const [petsAllowed, setPetsAllowed] = useState(false)
     const [partiesAllowed, setPartiesAllowed] = useState(false)
-    const [additionalRules, setAdditionalRules] = useState("")
+    const [additionalRulesI18n, setAdditionalRulesI8n] = useState("")
 
     
     useEffect(() => {
         if (!rules) return
-        setAdditionalRules(rules.additional_rules ?? "")
+        setAdditionalRulesI8n(rules.additional_rules_i18n?.[lang] ?? "")
         setPartiesAllowed(rules.parties_allowed ?? false)
         setPetsAllowed(rules.pets_allowed ?? false)
         setSmokingAllowed(rules.smoking_allowed ?? false)
-    }, [rules?.section_id])
+    }, [rules?.section_id, lang])
     
     if (loading) return <Loading/>
     if (error) return <Error/>
@@ -58,14 +66,18 @@ export const Rules = () => {
                 smokingAllowed,
                 petsAllowed,
                 partiesAllowed,
-                additionalRules
+                additionalRules_i18n: setI18nValue(
+                    rules?.additional_rules_i18n,
+                    lang,
+                    additionalRulesI18n
+                )
             },
             { close, refresh }
         )
     }
 
     return (
-        <div>
+        <>
             <Dialog
                 trigger={<Button  size="big"icon={<Edit/>} variant="absolute"> Modifier</Button>}
                 title="Règles"
@@ -107,8 +119,8 @@ export const Rules = () => {
                             <Label htmlFor="rules">Règles supplémentaires</Label>
                             <Textarea
                                 id="rules"
-                                value={additionalRules}
-                                onChange={(e) => setAdditionalRules(e.target.value)}
+                                value={additionalRulesI18n}
+                                onChange={(e) => setAdditionalRulesI8n(e.target.value)}
                             />
                         </ContentInput>
 
@@ -155,15 +167,19 @@ export const Rules = () => {
                                 classNameIcon={rules?.pets_allowed ? "text-green-400" : "text-red-400"}
                             />
                         </InfoSection>
-                        {!rules &&
-                        <InfoSection title="À noter">
-                            <p>{rules?.additional_rules}</p>
-                                    </InfoSection>
-                                }
+                                {rules.additional_rules_i18n?.[lang] && (
+                                    <div className="mt-5">
+                                    <InfoSection title="À noter">
+                                        <div className="relative">
+                                            <InfoRow valueRow={rules.additional_rules_i18n[lang]} />
+                                        </div>
+                                        </InfoSection>
+                                    </div>
+                                )}
                     </div>
                     )}
                 </div>
                 </ConditionalPhone>
-        </div>
+        </>
     )
 }

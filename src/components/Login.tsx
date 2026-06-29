@@ -186,7 +186,7 @@ export const Login = () => {
               <div className="flex items-start gap-2 rounded-lg bg-green-50 p-3 text-green-700 text-sm">
                 <p>
                   Un mail de confirmation a été envoyé à <strong>{email}</strong>
-                  <br/>Merci de le confrimer sous 24h !
+                  <br/>(si vous ne le trouver pas, regardez dans vos spams)
                 </p>
               </div>
             )}

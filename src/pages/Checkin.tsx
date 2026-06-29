@@ -1,7 +1,6 @@
 import { Error } from '@/components/Error';
 import { ClientLayout } from '@/components/layout/ClientLayout';
 import { ConditionalPhone } from '@/components/layout/ConditionalPhone';
-import { Phone } from '@/components/layout/Phone'
 import { Loading } from '@/components/Loading';
 import { Button } from '@/components/ui/Button'
 import { ContentInput } from '@/components/ui/ContentInput';
@@ -15,9 +14,10 @@ import { Label } from '@/components/ui/Label'
 import { Textarea } from '@/components/ui/Textarea'
 import { useApi } from '@/hooks/useApi'
 import { usePostApi } from '@/hooks/usePostApi';
+import {  setI18nValue } from '@/lib/utilis';
 import { stayDetailsApi } from '@/service/userApi'
+import { useUser } from '@/userContext';
 import { formatHour } from '@/utilis/formatHour';
-import { da } from 'date-fns/locale';
 import { Building2, DoorOpen, KeyRound, LogIn, LogOut, Smartphone, KeySquare, Edit, Plus } from 'lucide-react'
 import React, { useEffect, useState } from 'react'
 import { useParams } from "react-router-dom"
@@ -29,24 +29,31 @@ const ACCESS_TYPES = [
   { value: 'smart_lock', label: 'Smart lock', icon: <Smartphone size={18} /> },
   { value: 'concierge', label: 'Conciergerie', icon: <Building2 size={18} /> },
 ]
-
+export type StayDetails = {
+  section_id: string
+  checkin: string | null
+  checkout: string | null
+  instructions_i18n: Record<string, string> | null
+  instructions_leave_i18n: Record<string, string> | null  
+  key_access_type: string | null
+  key_access_info: string | null
+}
 export const Checkin = () => {
- type StayDetails = {
-    section_id: string
-    checkin: string | null
-    checkOut: string | null
-    instructions: string | null
-    key_access_type: string | null
-    key_access_info: string | null
-  }
+
+  const { lang } = useUser()
+
+  useEffect(() => {
+    refresh()
+  }, [lang])
+
   const { id } = useParams()
-console.log(id)
   const { data, loading, error, refresh } = useApi<StayDetails[]>(() => stayDetailsApi(id))
+  console.log(data)
 
   const { post, errorPost, loadingPost } = usePostApi()
 
   const [checkInTime, setCheckInTime] = useState("")
-  const [instruction, setInstruction] = useState("")
+  const [instructionI18n, setInstructionI18n] = useState("")
   const [keyInfo, setKeyInfo] = useState("")
   const [keyAccessType, setKeyAccessType] = useState(ACCESS_TYPES[0].value)
 
@@ -54,16 +61,14 @@ console.log(id)
   const checkIn = data?.[0]
   const hasData = !!checkIn?.checkin
   
-    // console.log(data)
 
   useEffect(() => {
     if (!checkIn) return
     setCheckInTime(checkIn.checkin ?? "")
-    setInstruction(checkIn.instructions ?? "")
-    setKeyInfo(checkIn.key_access_info ?? "")
+    setInstructionI18n(checkIn.instructions_i18n?.[lang] ?? "") 
+    setKeyInfo(checkIn.key_access_info ?? "")      
     setKeyAccessType(checkIn.key_access_type ?? ACCESS_TYPES[0].value)
-  }, [checkIn?.section_id])
-
+  }, [checkIn?.section_id, lang])
 
   const handleCheckin = async (e: React.FormEvent, close: () => void) => {
     e.preventDefault()
@@ -72,20 +77,26 @@ console.log(id)
       {
         sectionId: checkIn?.section_id,
         checkIn: checkInTime,
-        instruction,
+        instructions_i18n: setI18nValue(
+          checkIn?.instructions_i18n,
+          lang,
+          instructionI18n
+        ),
         keyAccessType,
         keyInfo,
       },
       { close, refresh }
     )
   }
+  console.log(data)
+
+
   const accessLabel = ACCESS_TYPES.find(a => a.value === checkIn?.key_access_type)?.label
   const needCode = keyAccessType === "digicode" || keyAccessType === "key_box"
   if (loading) return <Loading />
   if (error) return <Error />
   return (
     <>
-      <div>
         <ConditionalPhone>
           <ClientLayout />
           {!hasData ? (
@@ -103,23 +114,24 @@ console.log(id)
             </InfoSection>
             <InfoSection title="Accès">
               <InfoRow icon={KeyRound} valueRow={accessLabel ?? checkIn.key_access_type}>
-                {needCode && checkIn.key_access_info && (
-                  <span className="bg-black text-white font-mono text-sm px-3 py-1 rounded-lg tracking-widest">
-                    {checkIn.key_access_info}
-                  </span>
-                )}
+                    {needCode && checkIn.key_access_info && ( 
+                      <span className="bg-black text-white font-mono text-sm px-3 py-1 rounded-lg tracking-widest">
+                        {checkIn.key_access_info}
+                      </span>
+                    )}
               </InfoRow>
             </InfoSection>
-            {checkIn.instructions && (
-              <InfoSection title="Instruction d'arrivé">
-                <InfoRow valueRow={checkIn.instructions} />
-              </InfoSection>
+                {checkIn?.instructions_i18n?.[lang] && (
+                  <InfoSection title="Instruction d'arrivée">
+                    <div className="relative">
+                      <InfoRow valueRow={checkIn?.instructions_i18n?.[lang]} />
+                    </div>
+                  </InfoSection>
                 )}
               </div>
           </div>
           )}
         </ConditionalPhone>
-      </div>
 
       <Dialog trigger={<Button icon={hasData ? <Edit /> : <Plus />} size="big"variant="absolute">{hasData ? 'Modifier' : 'Ajouter'}</Button>} title="Check-in">
         {({ close }) => (
@@ -168,9 +180,9 @@ console.log(id)
 
             <ContentInput>
               <Label htmlFor="instructions">Instructions d'arrivée</Label>
-              <Textarea id="instructions" value={instruction}
+              <Textarea id="instructions" value={instructionI18n}
                 placeholder="ex : Sonnez à l'interphone, appartement 3B…"
-                onChange={(e) => setInstruction(e.target.value)} />
+                onChange={(e) => setInstructionI18n(e.target.value)} />
             </ContentInput>
 
             {errorPost && <p className="text-red-500 text-sm">{errorPost}</p>}

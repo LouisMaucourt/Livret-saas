@@ -1,12 +1,10 @@
 import { Button } from '@/components/ui/Button';
-import { useApi } from '@/hooks/useApi';
-import { QrCodeApi } from '@/service/userApi';
+import { APP_URL } from '@/config/url';
 import { useUser } from '@/userContext';
 import { ReactQRCode, ReactQRCodeRef } from '@lglab/react-qr-code';
 import { useRef } from 'react';
 import { useParams } from 'react-router';
-import { Loading } from '@/components/Loading';
-import { Error } from '@/components/Error';
+
 
 
 export const QrCode = () => {
@@ -41,7 +39,7 @@ export const QrCode = () => {
                 marginSize={2}
                 size={400}
                 ref={ref}
-                value={`http://localhost:3000/scan?id=${id}`}
+                value={`${APP_URL}/scan?id=${id}`}
             />
             <Button onClick={handleDownload}>Download PNG</Button>
         </div>

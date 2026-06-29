@@ -10,58 +10,73 @@ import { InfoSection } from '@/components/ui/InfoSection';
 import { Input } from '@/components/ui/Input';
 import { Label } from '@/components/ui/Label';
 import { Textarea } from '@/components/ui/Textarea';
+import { useApi } from '@/hooks/useApi';
 import { usePostApi } from '@/hooks/usePostApi';
-import { useUser } from '@/userContext';
+import { propertiesApi } from '@/service/userApi';
+import { Property, User, useUser } from '@/userContext';
 import { Edit, Flag, Globe, Home, MapPin } from 'lucide-react';
 import React, { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router';
 
+const LANGUAGES = [
+    { code: 'fr', label: 'Français' },
+    { code: 'en', label: 'English' },
+    { code: 'es', label: 'Español' },
+    { code: 'de', label: 'Deutsch' },
+    { code: 'it', label: 'Italiano' },
+    { code: 'pt', label: 'Português' },
+]
+
 export const General = () => {
     const navigate = useNavigate()
-    const { properties } = useUser()
-    console.log(properties)
     const { id } = useParams()
-    const data = properties?.find((e) => e.id === id)
-    console.log(data)
+    const { data, loading, refresh } = useApi<Property[]>(() => propertiesApi())
 
-    if (!data) return null
-
-    const [title, setTitle] = useState('');
-    const [imgUrl, setImgUrl] = useState('');
-    const [description, setDescription] = useState('');
-    const [address, setAddress] = useState("")
-    const [city, setCity] = useState("")
-    const [error, setError] = useState<string | null>(null);
-
-
+    const property = data?.find(c => c.id === id)
+    console.log(property?.address)
+    const [title, setTitle] = useState('')
+    const [imgUrl, setImgUrl] = useState('')
+    const [description, setDescription] = useState('')
+    const [address, setAddress] = useState('')
+    const [city, setCity] = useState('')
+    const [languages, setLanguages] = useState<string[]>(property?.languages ?? ['fr'])
+    const [error, setError] = useState<string | null>(null)
+    const { post, errorPost, loadingPost } = usePostApi()
 
     useEffect(() => {
         if (!data) return
-        setTitle(data.title ?? "")
-        setImgUrl(data.img_url ?? "")
-        setCity(data.city ?? "")
-        setAddress(data.address ?? "")
-        setDescription(data.description ?? "")
-    }, [data?.id])
+        setTitle(property?.title ?? '')
+        setImgUrl(property?.img_url ?? '')
+        setCity(property?.city ?? '')
+        setAddress(property?.address ?? '')
+        setDescription(property?.description ?? '')
+    }, [property?.id])
 
-    const { post, errorPost, loadingPost } = usePostApi()
+    if (!data) return null
+
+    const toggleLanguage = (code: string) => {
+        if (code === 'fr') return
+        setLanguages(prev =>
+            prev.includes(code) ? prev.filter(l => l !== code) : [...prev, code]
+        )
+    }
 
     const handleProperties = async (e: React.FormEvent, close: () => void) => {
+        // e.preventDefault()
         await post(
             "/api/properties",
-            { id: data?.id, title, city, address, imgUrl, description },
-            { close, method: "PUT" }
+            { id: property?.id, title, city, address, imgUrl, description, languages },
+            { close, method: "PUT", refresh }
         )
-        e.preventDefault()
     }
 
     const DeleteProperties = async (e: React.FormEvent, close: () => void) => {
+        e.preventDefault()
         await post(
             "/api/properties",
-            { id},
+            { id },
             { close, method: "DELETE" }
         )
-        e.preventDefault()
         navigate("/properties")
     }
     return (
@@ -72,36 +87,57 @@ export const General = () => {
                     <Card className="p-8">
                         <div className="flex flex-col gap-3">
                             <InfoSection title="Hébergement">
-                                <InfoRow icon={Home} nameRow="Nom" valueRow={data.title} />
-                                <InfoRow icon={Globe} nameRow="Langue" valueRow={data.language} />
+                                <InfoRow valueRow={property?.title} />
                             </InfoSection>
 
                             <InfoSection title="Localisation">
-                                <InfoRow icon={MapPin} nameRow="Ville" valueRow={data.city} />
-                                <InfoRow icon={MapPin} nameRow="Adresse" valueRow={data.address} />
-                                {data.country && <InfoRow icon={Flag} nameRow="Pays" valueRow={data.country} />}
+                                <InfoRow valueRow={property?.city} />
+                                <InfoRow valueRow={property.address} />
                             </InfoSection>
 
-                            {data.description && (
-                                <InfoSection title="Description">
-                                    <InfoRow valueRow={data.description} />
+                            <InfoSection title="Description">
+                                <InfoRow valueRow={property?.description} />
+                            </InfoSection>
+
+                            <InfoSection title="Langues disponibles">
+                                <div className="flex flex-wrap gap-2">
+                                    {(property?.languages ?? ['fr']).map((code) => {
+                                        const lang = LANGUAGES.find(l => l.code === code)
+                                        return (
+                                            <span key={code} className="px-3 py-1 rounded-full text-sm bg-violet-100 text-violet-700 border border-violet-200">
+                                                {lang?.label ?? code}
+                                            </span>
+                                        )
+                                    })}
+                                </div>
+                            </InfoSection>
+
+                            {(imgUrl || property.img_url) ? (
+                                <InfoSection title="Photo">
+                                    <div className="relative w-full h-[50vh] overflow-hidden rounded-lg">
+                                        <div
+                                            className="absolute inset-0 bg-center bg-cover bg-no-repeat"
+                                            style={{
+                                                backgroundImage: `url(/images/${property?.img_url || "placeholder.jpg"})`,
+                                            }}
+                                        />
+                                    </div>
+                                </InfoSection>
+                            ) : (
+                                <InfoSection title="Photo">
+                                    <div className="w-full h-40 bg-gray-100 rounded-lg flex flex-col items-center justify-center gap-2 text-gray-400">
+                                        <Home size={32} className="opacity-30" />
+                                        <p className="text-sm">Aucune photo ajoutée</p>
+                                    </div>
                                 </InfoSection>
                             )}
 
-                            {data.img_url && (
-                                <InfoSection title="Photo">
-                                    <img
-                                        src={`http://localhost:3000/images/${data.img_url}`}
-                                        className="w-full h-[40vh] object-cover rounded-lg"
-                                    />
-                                </InfoSection>
-                            )}
 
                         </div>
                     </Card>
                 </>
             </div>
-            <Dialog trigger={<Button size="big"  icon={<Edit />} variant="absolute">Modifier</Button>} title="Propriété">
+            <Dialog trigger={<Button size="big" icon={<Edit />} variant="absolute">Modifier</Button>} title="Propriété">
                 {({ close }) => (
                     <Form
                         onSubmit={(e) => {
@@ -138,12 +174,32 @@ export const General = () => {
                                 />
                             </div>
                         </ContentInput>
+                        <ContentInput>
+                            <Label htmlFor="lang">Langues disponibles</Label>
+                            <div className="flex flex-wrap gap-2">
+                                {LANGUAGES.map(({ code, label }) => (
+                                    <button
+                                        key={code}
+                                        type="button"
+                                        onClick={() => toggleLanguage(code)}
+                                        className={`px-3 py-1.5 rounded-full text-sm border transition
+          ${languages.includes(code)
+                                                ? 'bg-violet-600 text-white border-violet-600'
+                                                : 'bg-white text-gray-500 border-gray-200'
+                                            }
+          ${code === 'fr' ? 'opacity-60 cursor-not-allowed' : ''}
+        `}
+                                    >
+                                        {label}
+                                    </button>
+                                ))}
+                            </div>
+                        </ContentInput>
                         <Label htmlFor="img">Photo</Label>
                         <ImageUpload
                             bgImage={imgUrl ? `/images/${imgUrl}` : undefined}
                             className="h-48"
                             onUploadSuccess={(name) => setImgUrl(name)}
-                            onUploadError={(err) => setError(err)}
                         />
                         {imgUrl && (
                             <p className="text-xs text-green-600 mt-1">✓ Image prête</p>

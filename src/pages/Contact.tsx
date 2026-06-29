@@ -12,24 +12,30 @@ import { InfoRow } from '@/components/ui/InfoRow';
 import { InfoSection } from '@/components/ui/InfoSection';
 import { Input } from '@/components/ui/Input'
 import { Label } from '@/components/ui/Label'
+import { LangBadge } from '@/components/ui/LangBadge';
 import { Textarea } from '@/components/ui/Textarea'
 import { useApi } from '@/hooks/useApi'
 import { usePostApi } from '@/hooks/usePostApi';
 import { getContactApi } from '@/service/userApi'
+import { useUser } from '@/userContext';
+import console from 'console';
 import { Phone as PhoneIcon, NotebookText, UserRound, MessageCircle, UserStar, Edit, Plus } from 'lucide-react'
 import React, { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
 
 export const Contact = () => {
     type Contact = {
-        section_id: string       
+        section_id: string
         name: string | null
         phone: string | null
         whatsapp: string | null
-        notes: string | null
+        notes_i18n: Record<string, string> | null  
     }
     const { id } = useParams()
-
+    const { lang } = useUser()
+    useEffect(() => {
+        refresh()
+    }, [lang])
     const { data, loading, error, refresh } = useApi<Contact[]>(() => getContactApi(id))
 
     const { post, errorPost, loadingPost } = usePostApi()
@@ -46,29 +52,26 @@ export const Contact = () => {
     useEffect(() => {
         if (!contact) return
         setPhone(contact.phone ?? "")
-        setNotes(contact.notes ?? "")
+        setNotes(contact.notes_i18n?.[lang] ?? "")
         setName(contact.name ?? "")
         setWhatsapp(contact.whatsapp ?? "")
-    }, [contact?.section_id])
+    }, [contact?.section_id, lang])
 
     const handleContact = async (e: React.FormEvent, close: () => void) => {
         e.preventDefault()
-        await post(
-            "/api/contact",
-            {
-                sectionId: contact?.section_id,
-                name,
-                whatsapp,
-                phone,
-                notes,
-            },
-            { close, refresh }
-        )
+        await post("/api/contact", {
+            sectionId: contact?.section_id,
+            name,
+            whatsapp,
+            phone,
+            notes_i18n: { ...(contact?.notes_i18n ?? {}), [lang]: notes },
+        }, { close, refresh })
     }
 
     if (loading) return <Loading />
     if (error) return <Error />
 
+    console.log(data)
     return (
         <>
             <ConditionalPhone>
@@ -102,12 +105,15 @@ export const Contact = () => {
                                     />
                                 )}
 
-                                {contact?.notes && (
-                                    <InfoRow
-                                        valueRow={contact.notes}
-                                        />
+                                    {contact.notes_i18n?.[lang] &&
+                                            <InfoSection title="Note">
+                                                <div className="relative">
+                                                    <InfoRow valueRow={contact.notes_i18n?.[lang]} />
+                                                </div>
+                                        </InfoSection>
+                                    }
+                                      
                                     
-                                )}
                             </div>
                         </InfoSection>
                     </div>
@@ -151,9 +157,8 @@ export const Contact = () => {
                         <ContentInput>
                             <Label htmlFor="notes">Notes</Label>
                             <Textarea
-                                id="notes"
-                                placeholder="ex : Appeler en cas d'urgence uniquement…"
                                 value={notes}
+                                placeholder="ex : Appeler en cas d'urgence uniquement…"
                                 onChange={(e) => setNotes(e.target.value)}
                             />
                         </ContentInput>

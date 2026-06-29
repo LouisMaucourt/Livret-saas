@@ -134,7 +134,7 @@ import { Label } from '@/components/ui/Label';
         </Dialog>
         <div className={`grid grid-cols-${data?.length} gap-4 flex-1 h-[92vh]`}>
           {data?.map((b) => (
-            <Link key={b.id} to={`/properties/${b.id}`} onClick={() => addCookie('propertyId', b.id)} className="relative flex items-center justify-center h-full overflow-hidden rounded-xl" style={{ backgroundImage: `url(http://localhost:3000/images/${b?.img_url})`, backgroundSize: 'cover', backgroundPosition: 'center' }}>
+            <Link key={b.id} to={`/properties/${b.id}`} onClick={() => addCookie('propertyId', b.id)} className="relative flex items-center justify-center h-full overflow-hidden rounded-xl" style={{ backgroundImage: `url(/images/${b?.img_url})`, backgroundSize: 'cover', backgroundPosition: 'center' }}>
               <div className="absolute inset-0 bg-black/30" />
               <h2 className="relative  px-6 py-2 rounded-full text-white font-semibold text-lg text-center bg-white/10 backdrop-blur-sm border border-white/20 transition-all duration-300 hover:bg-white/25 hover:scale-105 hover:tracking-wide active:scale-95">
                 {b.title}

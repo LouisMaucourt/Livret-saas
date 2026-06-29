@@ -20,30 +20,15 @@ import { NavSection } from "../ui/NavSection";
 
 
 export default function OwnerDashboard({ children }: { children: React.ReactNode }) {
-    // const [title, setTitle] = useState('');
-    // const [imgUrl, setImgUrl] = useState('');
-    // const [description, setDescription] = useState('');
-    // const [address, setAddress] = useState("")
-    // const [city, setCity] = useState("")
 
-    // const { post, errorPost, loadingPost } = usePostApi()
 
-    const { user, properties, refreshProperties } = useUser();
+    const { user, properties } = useUser();
     const { id } = useParams()
     const { data, loading, refresh } = useApi<User[]>(() => propertiesApi())
 
     const idx = id || getCookie("propertyId") || properties[0]?.id
 
     const propertiesData = data ?? []
-
-    // const handleProperties = async (e: React.FormEvent, close: () => void) => {
-    //     e.preventDefault()
-    //     await post(
-    //         "/api/properties",
-    //         { userId: user?.id, title, city, address, imgUrl, description },
-    //         { close, refresh }
-    //     )
-    // }
 
     const p = data?.find((e) => e.id === idx)
 
@@ -53,8 +38,10 @@ export default function OwnerDashboard({ children }: { children: React.ReactNode
     }
     return (
         <div className="flex">
-            <div className="h-screen w-52 flex flex-col justify-between p-3
-  bg-white/55 backdrop-blur-xl border-r border-black/[0.06] z-10 relative">
+            <div className="w-52 shrink-0" /> {/* div vide pour réserver l'espace */}
+
+            <div className="fixed left-0 top-0 h-screen w-52 flex flex-col justify-between p-3
+        bg-white/55 backdrop-blur-xl border-r border-black/[0.06] z-10">
                 <div className="flex flex-col">
                     <DropDown title={p?.title ?? properties[0]?.title} icon={House}>
                         <p className="text-xs text-gray-400 mb-3">Mes propriétés</p>
@@ -92,7 +79,6 @@ export default function OwnerDashboard({ children }: { children: React.ReactNode
 
                 <DropDown title={user?.name ?? "Utilisateur"} icon={Usericon} align="bottom" >
                     <p className="text-xs text-gray-400">Mon compte</p>
-                    {/* <Card link="/profile">Profil</Card> */}
                     <button
                         onClick={() => logOut()}
                         className="text-red-500 hover:bg-red-50 w-full text-left p-2"
