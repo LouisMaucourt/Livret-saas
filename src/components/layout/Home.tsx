@@ -28,7 +28,6 @@ type HomeProps = {
 export const Home = ({ onRefreshReady }: HomeProps) => {
   const { id } = useParams()
   const { data, refresh } = useApi(() => getSectionApi(id))
-  console.log(data)
 
   useEffect(() => {
     onRefreshReady?.(refresh)

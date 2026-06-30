@@ -24,7 +24,7 @@ export default function OwnerDashboard({ children }: { children: React.ReactNode
 
     const { user, properties } = useUser();
     const { id } = useParams()
-    const { data, loading, refresh } = useApi<User[]>(() => propertiesApi())
+    const { data } = useApi<User[]>(() => propertiesApi())
 
     const idx = id || getCookie("propertyId") || properties[0]?.id
 

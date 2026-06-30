@@ -10,6 +10,7 @@ import { InfoSection } from '@/components/ui/InfoSection';
 import { Input } from '@/components/ui/Input';
 import { Label } from '@/components/ui/Label';
 import { Textarea } from '@/components/ui/Textarea';
+import { LANGUAGE_LABELS } from '@/config/langues';
 import { useApi } from '@/hooks/useApi';
 import { usePostApi } from '@/hooks/usePostApi';
 import { propertiesApi } from '@/service/userApi';
@@ -43,6 +44,8 @@ export const General = () => {
     const [error, setError] = useState<string | null>(null)
     const { post, errorPost, loadingPost } = usePostApi()
 
+    const { refreshProperties } = useUser()
+
     useEffect(() => {
         if (!data) return
         setTitle(property?.title ?? '')
@@ -50,6 +53,7 @@ export const General = () => {
         setCity(property?.city ?? '')
         setAddress(property?.address ?? '')
         setDescription(property?.description ?? '')
+        setLanguages(property?.languages ?? ['fr'])  
     }, [property?.id])
 
     if (!data) return null
@@ -62,12 +66,12 @@ export const General = () => {
     }
 
     const handleProperties = async (e: React.FormEvent, close: () => void) => {
-        // e.preventDefault()
         await post(
             "/api/properties",
             { id: property?.id, title, city, address, imgUrl, description, languages },
             { close, method: "PUT", refresh }
         )
+        refreshProperties?.()
     }
 
     const DeleteProperties = async (e: React.FormEvent, close: () => void) => {
@@ -79,6 +83,7 @@ export const General = () => {
         )
         navigate("/properties")
     }
+    console.log
     return (
         <div>
             <div>
@@ -101,14 +106,11 @@ export const General = () => {
 
                             <InfoSection title="Langues disponibles">
                                 <div className="flex flex-wrap gap-2">
-                                    {(property?.languages ?? ['fr']).map((code) => {
-                                        const lang = LANGUAGES.find(l => l.code === code)
-                                        return (
-                                            <span key={code} className="px-3 py-1 rounded-full text-sm bg-violet-100 text-violet-700 border border-violet-200">
-                                                {lang?.label ?? code}
-                                            </span>
-                                        )
-                                    })}
+                                    {((property?.languages ?? ['fr']) as Array<keyof typeof LANGUAGE_LABELS>).map((code) => (
+                                        <span key={code} className="px-3 py-1 rounded-full text-sm bg-violet-100 text-violet-700 border border-violet-200">
+                                            {LANGUAGE_LABELS[code] ?? code}
+                                        </span>
+                                    ))}
                                 </div>
                             </InfoSection>
 
@@ -177,7 +179,7 @@ export const General = () => {
                         <ContentInput>
                             <Label htmlFor="lang">Langues disponibles</Label>
                             <div className="flex flex-wrap gap-2">
-                                {LANGUAGES.map(({ code, label }) => (
+                                {Object.entries(LANGUAGE_LABELS).map(([code, label]) => (
                                     <button
                                         key={code}
                                         type="button"

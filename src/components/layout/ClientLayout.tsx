@@ -20,8 +20,6 @@ export const ClientLayout = () => {
     })
   }
 
-
-  // console.log(properties)
   return (
     <div className="relative w-full min-h-1/4 flex flex-col justify-end overflow-hidden">
       <div

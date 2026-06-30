@@ -221,10 +221,10 @@ const server = serve({
         `;
 
         const { error } = await resend.emails.send({
-          // from: "contact@louismaucourt.fun",
-          // to: body.email,
-          from: 'Acme <onboarding@resend.dev>',
-          to: "louis.maucourt7@gmail.com",
+          from: "contact@livret.louismaucourt.fun",
+          to: body.email,
+          // from: 'Acme <onboarding@resend.dev>',
+          // to: "louis.maucourt7@gmail.com",
           subject: "Confirme ton inscription",
           react: <Email url={`${process.env.BASE_URL}/verify?token=${verifyToken}`} />,
         });

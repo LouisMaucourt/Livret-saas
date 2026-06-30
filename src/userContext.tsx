@@ -1,4 +1,6 @@
 import { createContext, ReactNode, useContext, useState } from "react";
+import { useApi } from "./hooks/useApi";
+import { propertiesApi } from "./service/userApi";
 
 export type User = {
     id: string,
@@ -55,10 +57,8 @@ export function UserProvider({ children }: { children: ReactNode }) {
         setClient(c);
         if (c?.language) setLang(c.language);
     };
-
     const refreshProperties = async () => {
-        const res = await fetch("/api/properties", { credentials: "include" });
-        const data = await res.json();
+        const data = await propertiesApi();
         setProperties(data);
     };
 
