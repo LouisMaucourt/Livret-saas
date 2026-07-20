@@ -1,5 +1,5 @@
 export const SECTION_TITLES = {
-    infos: { fr: "Informations pratiques", en: "Practical info", es: "Información práctica", de: "Praktische Infos", it: "Informazioni", pt: "Informações" },
+    infos: { fr: "Informations", en: "Informations", es: "Información", de: "Infos", it: "Informazioni", pt: "Informações" },
     wifi: { fr: "Wifi", en: "Wifi", es: "Wifi", de: "Wifi", it: "Wifi", pt: "Wifi" },
     stay: { fr: "Arrivée et Départ", en: "Check-in & Out", es: "Llegada y Salida", de: "An- und Abreise", it: "Arrivo e Partenza", pt: "Chegada e Saída" },
     rules: { fr: "Règles", en: "Rules", es: "Reglas", de: "Regeln", it: "Regole", pt: "Regras" },

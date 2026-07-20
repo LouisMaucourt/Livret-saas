@@ -59,6 +59,7 @@ export const router = createBrowserRouter([
                             { path: "rules", Component: Rules },
                             { path: "contact", Component: Contact },
                             { path: "activity", element: <Places defaultCategory="activité" /> },
+                            { path: "convenience", element: <Places defaultCategory="convenience" /> },
                             { path: "restaurants", element: <Places defaultCategory="restaurant" /> },
                         ],
                         

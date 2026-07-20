@@ -42,8 +42,6 @@ export const Users = () => {
   const [copied, setCopied] = useState(false)
 
   const { properties } = useUser();
-  const property = properties.find(p => p.id === id)
-  console.log(property)
   
 
   const { data, error, loading, refresh } = useApi(() => getClientsApi(id))
@@ -58,11 +56,10 @@ export const Users = () => {
   const [editingPassword, setEditingPassword] = useState("")
   const [editingLang, setEditingLang] = useState("fr")
 
+  const p = properties?.find((e) => (e.id) === id)
   const handleCreate = async (e: React.FormEvent, close: () => void) => {
     e.preventDefault()
-
     if (!password.trim()) return
-
     await post(
       "/api/clients",
       {
@@ -157,9 +154,9 @@ export const Users = () => {
           {({ close }) => (
             <Form onSubmit={(e) => handleCreate(e, close)}>
               <ContentInput>
-                <Label htmlFor="name">Nom</Label>
+                <Label htmlFor="ClientName">Nom</Label>
                 <Input
-                  id="name"
+                  id="ClientName"
                   placeholder="Nom du client"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
@@ -167,9 +164,9 @@ export const Users = () => {
               </ContentInput>
 
               <ContentInput>
-                <Label htmlFor="password">Mot de passe</Label>
+                <Label htmlFor="password Client">Mot de passe</Label>
                 <Input
-                  id="password"
+                  id="passwordClient"
                   type="password"
                   placeholder="Mot de passe obligatoire"
                   value={password}
@@ -180,14 +177,14 @@ export const Users = () => {
               <ContentInput>
                 <Label>Langue</Label>
                 <div className="flex flex-wrap gap-2">
-                  {property?.languages?.map((code) => (
+                  {p?.languages?.map((code) => (
                     <button
                       key={code}
                       type="button"
                       onClick={() => setLang(code)}
                       className={`px-3 py-1.5 rounded-full text-sm border transition ${lang === code
-                          ? "bg-violet-600 text-white border-violet-600"
-                          : "bg-white text-gray-500 border-gray-200"
+                        ? "bg-violet-600 text-white border-violet-600"
+                        : "bg-white text-gray-500 border-gray-200"
                         }`}
                     >
                       {LANGUAGE_LABELS[code as keyof typeof LANGUAGE_LABELS] ?? code}
@@ -267,7 +264,7 @@ export const Users = () => {
                 {({ close }) => (
                   <Form onSubmit={(e) => handleUpdate(e, close)}>
                     <ContentInput>
-                      <Label>Nom</Label>
+                      <Label htmlFor="Nom du client">Nom</Label>
                       <Input
                         value={editingName}
                         onChange={(e) => setEditingName(e.target.value)}
@@ -275,7 +272,7 @@ export const Users = () => {
                     </ContentInput>
 
                     <ContentInput>
-                      <Label>Nouveau mot de passe</Label>
+                      <Label htmlFor="passwordClient">Nouveau mot de passe</Label>
                       <Input
                         type="password"
                         placeholder="Laisser vide si inchangé"
@@ -287,17 +284,17 @@ export const Users = () => {
                     <ContentInput>
                       <Label>Langue</Label>
                       <div className="flex flex-wrap gap-2">
-                        {Object.entries(LANGUAGE_LABELS).map(([code, label]) => (
+                        {p?.languages?.map((code) => (
                           <button
                             key={code}
                             type="button"
                             onClick={() => setEditingLang(code)}
                             className={`px-3 py-1.5 rounded-full text-sm border transition ${editingLang === code
-                                ? "bg-violet-600 text-white border-violet-600"
-                                : "bg-white text-gray-500 border-gray-200"
+                              ? "bg-violet-600 text-white border-violet-600"
+                              : "bg-white text-gray-500 border-gray-200"
                               }`}
                           >
-                            {label}
+                            {LANGUAGE_LABELS[code as keyof typeof LANGUAGE_LABELS] ?? code}
                           </button>
                         ))}
                       </div>

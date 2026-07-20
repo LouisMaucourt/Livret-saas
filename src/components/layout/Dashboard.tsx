@@ -57,13 +57,13 @@ export default function OwnerDashboard({ children }: { children: React.ReactNode
                     <div className="flex flex-col gap-10">
                         <NavSection label="Pages">
                             <BtnIcon to={`/properties/${idx}/`} icon={<HomeIcon size={15} />}>Menu</BtnIcon>
-                            <BtnIcon to={`/properties/${idx}/infos`} icon={<InfoIcon size={15} />}>Informations Pratiques</BtnIcon>
+                            <BtnIcon to={`/properties/${idx}/infos`} icon={<InfoIcon size={15} />}>Informations</BtnIcon>
                             <BtnIcon to={`/properties/${idx}/wifi`} icon={<Wifi size={15} />}>Wifi</BtnIcon>
                             <BtnIcon to={`/properties/${idx}/checkin`} icon={<LogIn size={15} />}>Arrivée</BtnIcon>
                             <BtnIcon to={`/properties/${idx}/checkout`} icon={<LogOut size={15} />}>Départ</BtnIcon>
-                            <BtnIcon to={`/properties/${idx}/rules`} icon={<ScrollText size={15} />}>Règlement</BtnIcon>
+                            <BtnIcon to={`/properties/${idx}/rules`} icon={<ScrollText size={15} />}>Règles</BtnIcon>
                             <BtnIcon to={`/properties/${idx}/contact`} icon={<Phone size={15} />}>Contact</BtnIcon>
-                            <BtnIcon to={`/properties/${idx}/activity`} icon={<MapPin size={15} />}>Activités</BtnIcon>
+                            <BtnIcon to={`/properties/${idx}/convenience`} icon={<MapPin size={15} />}>Lieux</BtnIcon>
                         </NavSection>
 
                         <hr className="my-2.5 border-black/[0.06]" />

@@ -1,11 +1,13 @@
-import { useIsOwner } from "../hooks/userRole"
+import { useIsOwner } from "../../hooks/userRole"
 
 export const LangBadge = ({
     i18nObject,
-    currentLang
+    currentLang,
+    className
 }: {
     i18nObject: Record<string, string>
     currentLang: string
+    className?:string
 }) => {
     const isOwner = useIsOwner()
 
@@ -17,11 +19,11 @@ export const LangBadge = ({
             className={`${!isOwner ? "hidden" : ""} text-[10px] font-mono uppercase px-1.5 py-0.5 rounded ${hasCurrentLang
                     ? "bg-violet-100 text-violet-600"
                     : "bg-orange-100 text-orange-500"
-                }`}
+                } ${className}`}
         >
             {hasCurrentLang
                 ? currentLang
-                : `${fallbackLang} · à traduire`}
+                : `${currentLang} · à traduire`}
         </span>
     )
 }

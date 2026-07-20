@@ -16,15 +16,16 @@ import { useApi } from '@/hooks/useApi'
 import { usePostApi } from '@/hooks/usePostApi'
 import { getPlacesApi } from '@/service/userApi'
 import { useUser } from '@/userContext';
-import { MapPin, Phone as PhoneIcon, Globe, UtensilsCrossed, Dumbbell, Plus, Edit, Trash2 } from 'lucide-react'
+import { MapPin, Phone as PhoneIcon, Globe, UtensilsCrossed, Dumbbell, Plus, Edit, Trash2, Store } from 'lucide-react'
 import React, { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
+import { useTranslation } from '@/hooks/useTranslation';
 
 const PLACES_CATEGORIES = [
-  { value: 'activité', label: 'Activité', icon: Dumbbell },
-  { value: 'restaurant', label: 'Restaurant', icon: UtensilsCrossed },
-]
-
+  { value: "convenience", label: "shops", icon: Store },
+  { value: "restaurant", label: "restaurants", icon: UtensilsCrossed },
+  { value: "activité", label: "activities", icon: Dumbbell },
+] as const
 interface Place {
   id: string
   section_id: string
@@ -41,7 +42,7 @@ interface Place {
 export const Places = ({ defaultCategory = PLACES_CATEGORIES[0].value }: { defaultCategory?: string }) => {
   const { id } = useParams()
   const { lang } = useUser()
-
+const t = useTranslation()
   const { data, loading, error, refresh } = useApi<Place[]>(() => getPlacesApi(id))
   const { post, errorPost, loadingPost } = usePostApi()
 
@@ -101,16 +102,18 @@ export const Places = ({ defaultCategory = PLACES_CATEGORIES[0].value }: { defau
       <ConditionalPhone>
         <ClientLayout />
         <div className="p-3">
-          <IconTitle title="Lieux" icon={MapPin} />
+          <IconTitle title={t.places.title} icon={MapPin} />
 
           <div className="flex gap-2">
-            {PLACES_CATEGORIES.map((cat) => (
-              <button key={cat.value} onClick={() => handleView(cat.value)}
-                className={`flex items-center gap-1.5 px-4 py-1 rounded-full text-sm border transition-colors ${view === cat.value ? "bg-violet-600 text-white border-blue-500" : "border-gray-200 text-gray-500 hover:bg-gray-50"}`}>
-                <cat.icon size={14} />
-                {cat.label}
-              </button>
-            ))}
+            <div className="flex gap-2 overflow-x-auto whitespace-nowrap scrollbar-hide pb-1 -mx-1 px-1">
+              {PLACES_CATEGORIES.map((cat) => (
+                <button key={cat.value} onClick={() => handleView(cat.value)}
+                  className={`flex items-center gap-1.5 px-4 py-1 rounded-full text-sm border transition-colors shrink-0 ${view === cat.value ? "bg-violet-600 text-white border-violet-500" : "border-gray-200 text-gray-500 hover:bg-gray-50"}`}>
+                  <cat.icon size={14} />
+                  {t.places[cat.label]}
+                </button>
+              ))}
+            </div>
           </div>
 
           {PLACES_CATEGORIES.map((cat) => {
@@ -122,7 +125,7 @@ export const Places = ({ defaultCategory = PLACES_CATEGORIES[0].value }: { defau
                 {filtered.length === 0 ? (
                   <p className="text-sm text-gray-400 px-4">Ajouter vos bonnes adresses !</p>
                 ) : (
-                  <InfoSection title={cat.label}>
+                    <InfoSection title={t.places[cat.label]}>
                     {filtered.map((p) => (
                       <div key={p.id} className="group relative bg-white border border-gray-200 rounded-xl p-4 hover:shadow-sm transition">
                         <div className="absolute top-3 right-3 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition">
@@ -193,10 +196,9 @@ export const Places = ({ defaultCategory = PLACES_CATEGORIES[0].value }: { defau
                               <LangBadge i18nObject={p.name_i18n} currentLang={lang} />
                             </div>
 
-                            {(p.description_i18n?.[lang] ?? Object.values(p.description_i18n)[0]) && (
-                              <p className="text-xs text-gray-500 mt-1 leading-relaxed">
-                                {p.description_i18n?.[lang] ?? Object.values(p.description_i18n)[0]}
-                              </p>
+                            {(p.description_i18n?.[lang]) && (
+                              <span className="whitespace-pre-line text-sm"> {p.description_i18n[lang]} </span>
+
                             )}
 
                             <div className="flex flex-wrap gap-2 mt-3">
@@ -240,7 +242,7 @@ export const Places = ({ defaultCategory = PLACES_CATEGORIES[0].value }: { defau
               <div className="grid grid-cols-2 gap-2">
                 {PLACES_CATEGORIES.map((c) => (
                   <button key={c.value} type="button" onClick={() => setCategory(c.value)}
-                    className={`flex items-center gap-2 p-2 rounded-lg border text-sm transition-colors ${category === c.value ? 'border-blue-500 bg-blue-50 text-blue-800' : 'border-gray-200 text-gray-500 hover:bg-gray-50'}`}>
+                    className={`flex items-center gap-2 p-2 rounded-lg border text-sm transition-colors ${category === c.value ? 'border-violet-500 bg-violet-50 text-violet-800' : 'border-gray-200 text-gray-500 hover:bg-gray-50'}`}>
                     <c.icon size={16} />{c.label}
                   </button>
                 ))}

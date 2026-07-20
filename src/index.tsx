@@ -317,9 +317,10 @@ const server = serve({
         const propertyId = new URL(req.url).searchParams.get("id")
 
         const clients = await sql`
-      SELECT id, name, property_id, is_active, created_at, qr_token, language
-      FROM clients
-      WHERE property_id = ${propertyId}
+SELECT id, name, property_id, is_active, created_at, qr_token, language
+FROM clients
+WHERE property_id = ${propertyId}
+ORDER BY created_at ASC
     `
 
         return Response.json(clients)
@@ -458,18 +459,19 @@ const server = serve({
         const params = new URL(req.url).searchParams
         const propertyId = params.get("id")
         const lang = params.get("lang") ?? "fr"
-
         const infos = await sql`
     SELECT 
       sections.id as section_id,
       infos_details.id,
       infos_details.title_i18n,
       infos_details.description_i18n,
-      infos_details.img_url
+      infos_details.img_url,
+      infos_details.sort_order
     FROM sections
     LEFT JOIN infos_details ON infos_details.section_id = sections.id
     WHERE sections.property_id = ${propertyId}
     AND sections.type = 'infos'
+    ORDER BY infos_details.sort_order
   `
 
         const result = infos.map((row) => ({
@@ -483,16 +485,14 @@ const server = serve({
       async POST(req) {
         if (!verifyAuth(req)) return unauthorized()
         const body = await req.json()
-        if (!body.sectionId) {
-          return Response.json({ error: "sectionId manquant" }, { status: 400 })
-        }
         const [infos] = await sql`
-    INSERT INTO infos_details (section_id, title_i18n, description_i18n, img_url)
+    INSERT INTO infos_details (section_id, title_i18n, description_i18n, img_url, sort_order)
     VALUES (
       ${body.sectionId},
       ${sql.json(body.titleI18n)},
       ${sql.json(body.descriptionI18n ?? {})},
-      ${body.imgUrl ?? null}
+      ${body.imgUrl ?? null},
+      COALESCE((SELECT MAX(sort_order) + 1 FROM infos_details WHERE section_id = ${body.sectionId}), 0)
     )
     RETURNING *
   `
@@ -511,7 +511,6 @@ const server = serve({
     WHERE id = ${body.id}
     RETURNING *
   `
-        console.log("PUT result:", infos)
         return Response.json(infos)
       },
       async DELETE(req) {
@@ -520,6 +519,26 @@ const server = serve({
         await sql`DELETE FROM infos_details WHERE id = ${body.id}`
         return Response.json({ ok: true })
       }
+    },
+    "/api/infos/reorder": {
+      async PUT(req) {
+        if (!verifyAuth(req)) return unauthorized()
+        const body = await req.json()
+
+        const updated = await Promise.all(
+          body.order.map(
+            (item: { id: string; sort_order: number }) =>
+              sql`
+                UPDATE infos_details
+                SET sort_order = ${item.sort_order}
+                WHERE id = ${item.id}
+                RETURNING *
+              `
+          )
+        )
+
+        return Response.json(updated.flat())
+      },
     },
     "/api/wifi": {
       async GET(req) {
@@ -566,15 +585,37 @@ const server = serve({
         const body = await req.json()
         const [contact] = await sql`
     INSERT INTO contacts_details (section_id, name, phone, whatsapp, notes_i18n)
-    VALUES (${body.sectionId}, ${body.name}, ${body.phone ?? null}, ${body.whatsapp ?? null}, ${sql.json(body.notes_i18n ?? {})})
-    ON CONFLICT (section_id) DO UPDATE SET
-      name       = EXCLUDED.name,
-      phone      = EXCLUDED.phone,
-      whatsapp   = EXCLUDED.whatsapp,
-      notes_i18n = contacts_details.notes_i18n || EXCLUDED.notes_i18n
+    VALUES (
+    ${body.sectionId}, 
+    ${body.name}, 
+    ${body.phone ?? null}, 
+    ${body.whatsapp ?? null}, 
+    ${sql.json(body.notes_i18n ?? {})}
+    )
     RETURNING *
   `
         return Response.json(contact)
+      },
+      async PUT(req) {
+        if (!verifyAuth(req)) return unauthorized()
+        const body = await req.json()
+        const [contact] = await sql `
+      UPDATE contacts_details
+      SET
+        name = ${body.name},
+        phone = ${body.phone},
+        whatsapp = ${body.whatsapp},
+        notes_i18n = notes_i18n || ${sql.json(body.notes_i18n)}
+      WHERE id = ${body.id}
+      RETURNING *
+        `
+        return Response.json(contact)
+      },
+      async DELETE(req) { 
+        if (!verifyAuth(req)) return unauthorized()
+        const body = await req.json()
+        await sql`DELETE FROM contacts_details WHERE id = ${body.id}`
+        return Response.json({ok:true})
       }
     },
     "/api/places": {
@@ -737,8 +778,8 @@ key_access_info = EXCLUDED.key_access_info
 
         const body = await req.json();
         const [properties] = await sql`
-  INSERT INTO properties (owner_id, title, city, address, img_url, description)
-  VALUES (${userId}, ${body.title}, ${body.city}, ${body.address}, ${body.imgUrl}, ${body.description})
+  INSERT INTO properties (owner_id, title, city, address, img_url, description_i18n)
+  VALUES (${userId}, ${body.title}, ${body.city}, ${body.address}, ${body.imgUrl}, ${sql.json(body.description_i18n ?? {})})
   RETURNING *
 `;
 
@@ -766,7 +807,7 @@ key_access_info = EXCLUDED.key_access_info
       city = ${body.city}, 
       address = ${body.address}, 
       img_url = ${body.imgUrl}, 
-      description = ${body.description},
+      description_i18n = description_i18n || ${sql.json(body.description_i18n)},
       languages = ${body.languages}
     WHERE id = ${body.id}
     RETURNING *

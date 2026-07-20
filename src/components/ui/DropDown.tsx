@@ -35,7 +35,7 @@ export const DropDown = ({ title, icon: Icon, children, align = "top" }: DropDow
 
             {open && (
                 <div
-                    onClick={() => setOpen(false)}  // ← ici
+                    onClick={() => setOpen(false)}
                     className={`absolute flex flex-col left-full ml-2 w-52 z-50 p-1.5 bg-white/80 backdrop-blur-xl border border-black/[0.07] rounded-xl shadow-md ${align === "bottom" ? "bottom-0" : "top-0"}`}
                 >
                     {children}

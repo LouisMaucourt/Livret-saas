@@ -23,6 +23,8 @@ import { useParams } from "react-router-dom"
 import { StayDetails } from './Checkin';
 import { useUser } from '@/userContext';
 import { setI18nValue } from '@/lib/utilis';
+import { useTranslation } from '@/hooks/useTranslation';
+import { LangBadge } from '@/components/ui/LangBadge';
 
 const ACCESS_TYPES = [
     { value: 'physical_key', label: 'Clé physique', icon: <KeyRound size={18} /> },
@@ -32,14 +34,11 @@ const ACCESS_TYPES = [
     { value: 'concierge', label: 'Conciergerie', icon: <Building2 size={18} /> },
 ]
 export const Checkout = () => {
+    const t = useTranslation()
     const { id } = useParams()
     const { lang } = useUser()
 
     const { data, loading, error, refresh } = useApi<StayDetails[]>(() => stayDetailsApi(id))
-
-    useEffect(() => {
-        refresh()
-    }, [lang])
 
     const { post, errorPost, loadingPost } = usePostApi()
 
@@ -92,15 +91,15 @@ export const Checkout = () => {
                     </div>
                 ) : (
                     <div className="p-3">
-                        <IconTitle title="Départ" icon={DoorClosed} />
-                        <InfoSection title="Horaire">
-                            <InfoRow icon={LogOut} nameRow="Départ" valueRow={formatHour(checkIn.checkout ?? "")} />
+                            <IconTitle title={t.checkin_checkout.departure} icon={DoorClosed} />
+                            <InfoSection title={t.checkin_checkout.arrival_time}>
+                                <InfoRow icon={LogOut} nameRow={t.checkin_checkout.departure} valueRow={formatHour(checkIn.checkout ?? "")} />
                         </InfoSection>
                             {checkIn.instructions_leave_i18n?.[lang] && (
-                                <InfoSection title="Instruction d'arrivée">
-                                    <div className="relative">
+                                <InfoSection title={t.checkin_checkout.departure_instruction} className="pt-4 relative">
+                                    <LangBadge i18nObject={checkIn.instructions_i18n!} currentLang={lang} className="absolute right-0" />
+
                                         <InfoRow valueRow={checkIn.instructions_leave_i18n?.[lang]} />
-                                    </div>
                                 </InfoSection>
                             )}
                     </div>

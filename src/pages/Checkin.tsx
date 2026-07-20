@@ -11,9 +11,11 @@ import { InfoRow } from '@/components/ui/InfoRow';
 import { InfoSection } from '@/components/ui/InfoSection';
 import { Input } from '@/components/ui/Input'
 import { Label } from '@/components/ui/Label'
+import { LangBadge } from '@/components/ui/LangBadge';
 import { Textarea } from '@/components/ui/Textarea'
 import { useApi } from '@/hooks/useApi'
 import { usePostApi } from '@/hooks/usePostApi';
+import { useTranslation } from '@/hooks/useTranslation';
 import {  setI18nValue } from '@/lib/utilis';
 import { stayDetailsApi } from '@/service/userApi'
 import { useUser } from '@/userContext';
@@ -39,13 +41,9 @@ export type StayDetails = {
   key_access_info: string | null
 }
 export const Checkin = () => {
+  const t = useTranslation()
 
   const { lang } = useUser()
-
-  useEffect(() => {
-    refresh()
-  }, [lang])
-
   const { id } = useParams()
   const { data, loading, error, refresh } = useApi<StayDetails[]>(() => stayDetailsApi(id))
   console.log(data)
@@ -107,12 +105,13 @@ export const Checkin = () => {
 
         ) : (
           <div className="p-3">
-              <IconTitle title="Arrivée" icon={DoorOpen} />
+              <IconTitle title={t.checkin_checkout.arrival} icon={DoorOpen} />
             <div className="flex flex-col gap-3">
-            <InfoSection title="Horaire">
-                    <InfoRow icon={LogIn} nameRow="Arrivée" valueRow={formatHour(checkIn.checkin ?? "")} />
+                <InfoSection title={t.checkin_checkout.arrival_time}>
+                  <InfoRow icon={LogIn} nameRow={t.checkin_checkout.arrival} valueRow={formatHour(checkIn.checkin ?? "")} />
             </InfoSection>
-            <InfoSection title="Accès">
+                <InfoSection title={t.checkin_checkout.access}>
+
               <InfoRow icon={KeyRound} valueRow={accessLabel ?? checkIn.key_access_type}>
                     {needCode && checkIn.key_access_info && ( 
                       <span className="bg-black text-white font-mono text-sm px-3 py-1 rounded-lg tracking-widest">
@@ -121,13 +120,11 @@ export const Checkin = () => {
                     )}
               </InfoRow>
             </InfoSection>
-                {checkIn?.instructions_i18n?.[lang] && (
-                  <InfoSection title="Instruction d'arrivée">
-                    <div className="relative">
-                      <InfoRow valueRow={checkIn?.instructions_i18n?.[lang]} />
-                    </div>
+                <InfoSection title={t.checkin_checkout.arrival_instruction} className="relative">
+                    
+                      <LangBadge i18nObject={checkIn.instructions_i18n!} currentLang={lang} className="absolute right-0"/>
+                      <InfoRow valueRow={checkIn?.instructions_i18n?.[lang]} />              
                   </InfoSection>
-                )}
               </div>
           </div>
           )}
@@ -153,7 +150,7 @@ export const Checkin = () => {
                     onClick={() => setKeyAccessType(t.value)}
                     className={`flex flex-col items-center gap-1 p-2 rounded-lg border text-xs transition-colors
                       ${keyAccessType === t.value
-                        ? 'border-blue-500 bg-blue-50 text-blue-800'
+                      ? 'border-violet-500 bg-violet-50 text-violet-800'
                         : 'border-gray-200 text-gray-500 hover:bg-gray-50'
                       }`}
                   >

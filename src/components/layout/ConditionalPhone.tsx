@@ -1,5 +1,4 @@
-
-import { useIsOwner } from '../hooks/userRole';
+import { useIsOwner } from '@/hooks/userRole';
 import { Phone } from './Phone'
 
 export const ConditionalPhone = ({ children }: { children: React.ReactNode }) => {

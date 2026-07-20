@@ -1,7 +1,6 @@
 import { Error } from "@/components/Error";
 import { ClientLayout } from "@/components/layout/ClientLayout";
-import { ConditionalPhone } from "@/components/layout/ConditionalPhone";
-import { Phone } from "@/components/layout/Phone"
+import { ConditionalPhone } from "@/components/layout/ConditionalPhone";    
 import { Loading } from "@/components/Loading";
 import { Button } from "@/components/ui/Button"
 import { ContentInput } from "@/components/ui/ContentInput"
@@ -16,20 +15,18 @@ import { LangBadge } from "@/components/ui/LangBadge";
 import { Textarea } from "@/components/ui/Textarea"
 import { useApi } from "@/hooks/useApi"
 import { usePostApi } from "@/hooks/usePostApi"
+import { useTranslation } from "@/hooks/useTranslation";
 import { setI18nValue } from "@/lib/utilis";
 import { getRulesApi } from "@/service/userApi"
 import { useUser } from "@/userContext";
 import { AlarmSmoke, BookText, Edit, PartyPopper } from "lucide-react"
 import { useEffect, useState } from "react"
-import { useLocation, useParams } from "react-router"
+import { useParams } from "react-router"
 
 export const Rules = () => {
+    const t = useTranslation()
     const { id } = useParams()
     const { lang } = useUser()
-
-    useEffect(() => {
-        refresh()
-    }, [lang])
 
     const { data, error, loading, refresh } = useApi(() => getRulesApi(id))
     const { post, errorPost, loadingPost } = usePostApi()
@@ -55,7 +52,7 @@ export const Rules = () => {
     if (loading) return <Loading/>
     if (error) return <Error/>
     
-    console.log(rules)
+    // console.log(rules)
     const handleRules = async (e: React.FormEvent, close: () => void) => {
         e.preventDefault()
 
@@ -75,6 +72,7 @@ export const Rules = () => {
             { close, refresh }
         )
     }
+    const hasAdditionalRules = Object.values(rules.additional_rules_i18n ?? {}).some(v => v)
 
     return (
         <>
@@ -146,36 +144,45 @@ export const Rules = () => {
                         </div>
                 ) : (
                     <div className="">
-                        <IconTitle title="Règles" icon={BookText} />
+                                <IconTitle title={t.rules.title} icon={BookText} />
+                                <InfoSection title={t.rules.authorization} >
+                                    <InfoRow
+                                        icon={PartyPopper}
+                                        valueRow={
+                                            rules?.parties_allowed
+                                                ? t.rules.parties_allowed
+                                                : t.rules.parties_not_allowed
+                                        }
+                                        classNameIcon={rules?.parties_allowed ? "text-green-400" : "text-red-400"}
+                                    />
 
-                        <InfoSection title="Autorisation">
-                            <InfoRow
-                                icon={PartyPopper}
-                                valueRow={rules?.parties_allowed ? "Fêtes autorisées" : "Fêtes non autorisées"}
-                                classNameIcon={rules?.parties_allowed ? "text-green-400" : "text-red-400"}
-                            />
+                                    <InfoRow
+                                        icon={AlarmSmoke}
+                                        valueRow={
+                                            rules?.smoking_allowed
+                                                ? t.rules.smoking_allowed
+                                                : t.rules.smoking_not_allowed
+                                        }
+                                        classNameIcon={rules?.smoking_allowed ? "text-green-400" : "text-red-400"}
+                                    />
 
-                            <InfoRow
-                                icon={AlarmSmoke}
-                                valueRow={rules?.smoking_allowed ? "Fumeur autorisé" : "Fumeur non autorisé"}
-                                classNameIcon={rules?.smoking_allowed ? "text-green-400" : "text-red-400"}
-                            />
-
-                            <InfoRow
-                                icon={AlarmSmoke}
-                                valueRow={rules?.pets_allowed ? "Animaux autorisés" : "Animaux non autorisés"}
-                                classNameIcon={rules?.pets_allowed ? "text-green-400" : "text-red-400"}
-                            />
+                                    <InfoRow
+                                        icon={AlarmSmoke}
+                                        valueRow={
+                                            rules?.pets_allowed
+                                                ? t.rules.pets_allowed
+                                                : t.rules.pets_not_allowed
+                                        }
+                                        classNameIcon={rules?.pets_allowed ? "text-green-400" : "text-red-400"}
+                                    />
                         </InfoSection>
-                                {rules.additional_rules_i18n?.[lang] && (
-                                    <div className="mt-5">
-                                    <InfoSection title="À noter">
-                                        <div className="relative">
-                                            <InfoRow valueRow={rules.additional_rules_i18n[lang]} />
-                                        </div>
-                                        </InfoSection>
-                                    </div>
+                                {hasAdditionalRules && (
+                                    <InfoSection title="À noter" className="relative pt-4">
+                                        <LangBadge i18nObject={rules.additional_rules_i18n ?? {}} currentLang={lang} className="absolute right-0" />
+                                        <InfoRow valueRow={rules.additional_rules_i18n?.[lang]} />
+                                    </InfoSection>
                                 )}
+                            
                     </div>
                     )}
                 </div>

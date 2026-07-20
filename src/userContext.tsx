@@ -18,7 +18,7 @@ export type Property = {
     created_at: string;
     title: string;
     img_url: string;
-    description: string;
+    description_i18n: string;
     country: string;
     default_language: string;
     languages: string[];      

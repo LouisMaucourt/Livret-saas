@@ -1,5 +1,15 @@
 @import "tailwindcss";
-
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 0.1s;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
 @layer base {
   :root {
     @apply text-[rgba(19,19,19,0.87)] bg-[#ebe7e7] font-sans;
@@ -7,6 +17,7 @@
 
   body {
     @apply grid min-w-[320px] min-h-screen relative m-0;
+    /* user-select: none; */
   }
 }
 .no-scrollbar::-webkit-scrollbar {
@@ -60,6 +71,7 @@ input, textarea, select {
   background-color: white;
   color:black;
 }
+
 
 :root {
   --sidebar: hsl(0 0% 98%);

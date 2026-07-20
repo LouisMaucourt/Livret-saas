@@ -69,7 +69,7 @@ CREATE TABLE properties (
   city             VARCHAR(100),
   address          VARCHAR(255),
   img_url          VARCHAR(255),
-  description      VARCHAR(250),
+  description_i18n JSONB NOT NULL DEFAULT '{}',
   default_language supported_language NOT NULL DEFAULT 'fr',
   languages        supported_language[] NOT NULL DEFAULT '{fr}',
   created_at       TIMESTAMP WITH TIME ZONE DEFAULT NOW()
@@ -123,7 +123,8 @@ CREATE TABLE infos_details (
   section_id       UUID NOT NULL REFERENCES sections(id) ON DELETE CASCADE,
   img_url          VARCHAR(250),
   title_i18n       JSONB NOT NULL DEFAULT '{}',
-  description_i18n JSONB NOT NULL DEFAULT '{}'
+  description_i18n JSONB NOT NULL DEFAULT '{}',
+  sort_order  INTEGER NOT NULL DEFAULT 0
 );
 
 CREATE TABLE places_details (
@@ -148,7 +149,7 @@ CREATE TABLE golden_book (
 
 CREATE TABLE contacts_details (
   id         UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  section_id UUID NOT NULL UNIQUE REFERENCES sections(id) ON DELETE CASCADE,
+  section_id UUID NOT NULL REFERENCES sections(id) ON DELETE CASCADE,
   name       VARCHAR(100) NOT NULL,
   phone      VARCHAR(50),
   whatsapp   VARCHAR(100),

@@ -16,8 +16,8 @@ export const IconTitle = ({
 }: IconTitleProps) => {
     return (
         <div className={`flex items-center gap-2 my-5 ${className}`}>
-            <div className="size-10 rounded-full bg-blue-50 flex items-center justify-center shrink-0">
-                <Icon className="size-6 text-blue-600" />
+            <div className="size-10 rounded-full bg-violet-50 flex items-center justify-center shrink-0">
+                <Icon className="size-6 text-violet-600" />
             </div>
 
             <div className="flex flex-col gap-0.5">

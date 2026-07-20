@@ -9,39 +9,33 @@ import { InfoRow } from '@/components/ui/InfoRow';
 import { InfoSection } from '@/components/ui/InfoSection';
 import { Input } from '@/components/ui/Input';
 import { Label } from '@/components/ui/Label';
+import { LangBadge } from '@/components/ui/LangBadge';
+import { SwitchLanguages } from '@/components/ui/SwitchLanguages';
 import { Textarea } from '@/components/ui/Textarea';
 import { LANGUAGE_LABELS } from '@/config/langues';
 import { useApi } from '@/hooks/useApi';
 import { usePostApi } from '@/hooks/usePostApi';
+import { setI18nValue } from '@/lib/utilis';
 import { propertiesApi } from '@/service/userApi';
 import { Property, User, useUser } from '@/userContext';
 import { Edit, Flag, Globe, Home, MapPin } from 'lucide-react';
 import React, { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router';
 
-const LANGUAGES = [
-    { code: 'fr', label: 'Français' },
-    { code: 'en', label: 'English' },
-    { code: 'es', label: 'Español' },
-    { code: 'de', label: 'Deutsch' },
-    { code: 'it', label: 'Italiano' },
-    { code: 'pt', label: 'Português' },
-]
 
 export const General = () => {
     const navigate = useNavigate()
     const { id } = useParams()
+    const { lang } = useUser()
     const { data, loading, refresh } = useApi<Property[]>(() => propertiesApi())
 
     const property = data?.find(c => c.id === id)
-    console.log(property?.address)
     const [title, setTitle] = useState('')
     const [imgUrl, setImgUrl] = useState('')
-    const [description, setDescription] = useState('')
+    const [descriptionI18n, setDescriptionI18n] = useState<Record<string, string>>({})
     const [address, setAddress] = useState('')
     const [city, setCity] = useState('')
     const [languages, setLanguages] = useState<string[]>(property?.languages ?? ['fr'])
-    const [error, setError] = useState<string | null>(null)
     const { post, errorPost, loadingPost } = usePostApi()
 
     const { refreshProperties } = useUser()
@@ -52,7 +46,7 @@ export const General = () => {
         setImgUrl(property?.img_url ?? '')
         setCity(property?.city ?? '')
         setAddress(property?.address ?? '')
-        setDescription(property?.description ?? '')
+        setDescriptionI18n(property?.description_i18n ?? {})
         setLanguages(property?.languages ?? ['fr'])  
     }, [property?.id])
 
@@ -68,7 +62,15 @@ export const General = () => {
     const handleProperties = async (e: React.FormEvent, close: () => void) => {
         await post(
             "/api/properties",
-            { id: property?.id, title, city, address, imgUrl, description, languages },
+            {
+                id: property?.id,
+                title,
+                city,
+                address,
+                imgUrl,
+                languages,
+                description_i18n: descriptionI18n
+            },
             { close, method: "PUT", refresh }
         )
         refreshProperties?.()
@@ -83,26 +85,42 @@ export const General = () => {
         )
         navigate("/properties")
     }
-    console.log
+    console.log(data)
     return (
         <div>
             <div>
                 <>
-                    <IconTitle title="Général" icon={Home} />
+                    <IconTitle title="Général" icon={Home} />  
+                    <Card className="my-5 p-8">
+                        <InfoSection title="Mode de langues">
+                            {property && <SwitchLanguages variant="grey" data={property} />}
+                        </InfoSection>
+                    </Card>                         
                     <Card className="p-8">
                         <div className="flex flex-col gap-3">
+
                             <InfoSection title="Hébergement">
                                 <InfoRow valueRow={property?.title} />
                             </InfoSection>
 
                             <InfoSection title="Localisation">
-                                <InfoRow valueRow={property?.city} />
+                                <InfoRow valueRow={property.city} />
                                 <InfoRow valueRow={property.address} />
                             </InfoSection>
 
-                            <InfoSection title="Description">
-                                <InfoRow valueRow={property?.description} />
-                            </InfoSection>
+                            <div>
+                                <div className="flex gap-5"></div>
+                                <InfoSection title="Description" className="relative">
+                                    <LangBadge
+                                        i18nObject={descriptionI18n}
+                                        currentLang={lang}
+                                        className="absolute right-0 shadow-2xl"
+                                        
+                                    />
+                                    <InfoRow valueRow={property?.description_i18n?.[lang]} />
+                                </InfoSection>
+</div>
+
 
                             <InfoSection title="Langues disponibles">
                                 <div className="flex flex-wrap gap-2">
@@ -137,6 +155,7 @@ export const General = () => {
 
                         </div>
                     </Card>
+
                 </>
             </div>
             <Dialog trigger={<Button size="big" icon={<Edit />} variant="absolute">Modifier</Button>} title="Propriété">
@@ -203,16 +222,22 @@ export const General = () => {
                             className="h-48"
                             onUploadSuccess={(name) => setImgUrl(name)}
                         />
-                        {imgUrl && (
-                            <p className="text-xs text-green-600 mt-1">✓ Image prête</p>
-                        )}
                         <ContentInput>
-                            <Label htmlFor="description">Courte description</Label>
+                            <div className="flex items-center gap-5">
+                                <Label htmlFor="description">Courte description</Label>
+                                <LangBadge
+                                    i18nObject={descriptionI18n}
+                                    currentLang={lang}
+                                />
+                            </div>
+
                             <Textarea
                                 id="description"
                                 name="description"
-                                value={description}
-                                onChange={(e) => setDescription(e.target.value)}
+                                value={descriptionI18n[lang] ?? ''}
+                                onChange={(e) =>
+                                    setDescriptionI18n(prev => ({ ...prev, [lang]: e.target.value }))
+                                }
                             />
                         </ContentInput>
 

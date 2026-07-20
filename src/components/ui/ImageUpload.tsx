@@ -1,6 +1,7 @@
 import React, { useRef, useState } from 'react'
 import { generateImageName, getFileExtension } from '@/utilis/generateImageName'
-import { Upload } from 'lucide-react'
+import { Upload, Check, AlertCircle, Loader2 } from 'lucide-react'
+import { compressImage } from '@/utilis/compressImage';
 
 interface ImageUploadProps {
     onUploadSuccess: (imgUrl: string) => void
@@ -10,10 +11,13 @@ interface ImageUploadProps {
     bgImage?: string
 }
 
+type UploadStatus = 'idle' | 'uploading' | 'success' | 'error'
+
 export const ImageUpload = ({ onUploadSuccess, onUploadError, className, style, bgImage }: ImageUploadProps) => {
     const inputRef = useRef<HTMLInputElement>(null)
     const [preview, setPreview] = useState<string | null>(null)
-    const [uploading, setUploading] = useState(false)
+    const [status, setStatus] = useState<UploadStatus>('idle')
+    const [errorMsg, setErrorMsg] = useState<string | null>(null)
 
     const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0]
@@ -22,54 +26,84 @@ export const ImageUpload = ({ onUploadSuccess, onUploadError, className, style, 
         const ext = getFileExtension(file)
         const imageName = generateImageName(ext)
         setPreview(URL.createObjectURL(file))
-        setUploading(true)
+        setStatus('uploading')
+        setErrorMsg(null)
 
         try {
             const formData = new FormData()
-            formData.append('file', file)
+            const compressed = await compressImage(file)
+            formData.append('file', compressed)
             formData.append('fileName', imageName)
             const res = await fetch('/api/upload', { method: 'POST', body: formData })
             if (!res.ok) {
                 const data = await res.json()
-                onUploadError?.(data.error ?? "Erreur lors de l'upload")
+                const message = data.error ?? "Erreur lors de l'upload"
+                setStatus('error')
+                setErrorMsg(message)
+                onUploadError?.(message)
                 return
             }
+
+            setStatus('success')
             onUploadSuccess(imageName)
         } catch {
-            onUploadError?.("Erreur serveur lors de l'upload")
-        } finally {
-            setUploading(false)
+            const message = "Erreur serveur lors de l'upload"
+            setStatus('error')
+            setErrorMsg(message)
+            onUploadError?.(message)
         }
     }
 
     const bg = preview ?? bgImage
 
     return (
-        <div
-            onClick={() => inputRef.current?.click()}
-            className={`relative w-full h-40 rounded-xl border border-dashed border-black/[0.15] overflow-hidden cursor-pointer flex items-center justify-center bg-gray-50 hover:bg-gray-100 transition-colors ${className}`}
-            style={{ backgroundImage: bg ? `url(${bg})` : undefined, backgroundSize: 'cover', backgroundPosition: 'center', ...style }}
-        >
-            {!bg && (
-                <div className="flex flex-col items-center gap-1.5 text-gray-400 select-none">
-                    <Upload size={20} />
-                    <span className="text-xs">Choisir une image</span>
-                </div>
+        <div>
+            <div
+                onClick={() => inputRef.current?.click()}
+                className={`relative w-full h-40 rounded-xl border border-dashed overflow-hidden cursor-pointer flex items-center justify-center bg-gray-50 hover:bg-gray-100 transition-colors ${status === 'error' ? 'border-red-300' : 'border-black/[0.15]'
+                    } ${className}`}
+                style={{ backgroundImage: bg ? `url(${bg})` : undefined, backgroundSize: 'cover', backgroundPosition: 'center', ...style }}
+            >
+                {!bg && status === 'idle' && (
+                    <div className="flex flex-col items-center gap-1.5 text-gray-400 select-none">
+                        <Upload size={20} />
+                        <span className="text-xs">Choisir une image</span>
+                    </div>
+                )}
+
+                {bg && status !== 'uploading' && (
+                    <div className="absolute inset-0 bg-black/0 hover:bg-black/20 transition-colors flex items-center justify-center group">
+                        <Upload size={18} className="text-white opacity-0 group-hover:opacity-100" />
+                    </div>
+                )}
+
+                {status === 'uploading' && (
+                    <div className="absolute inset-0 bg-black/50 flex flex-col items-center justify-center gap-2">
+                        <Loader2 size={22} className="text-white animate-spin" />
+                        <span className="text-white text-xs font-medium">Envoi…</span>
+                    </div>
+                )}
+
+                {status === 'success' && (
+                    <div className="absolute top-2 right-2 bg-green-500 text-white rounded-full p-1 shadow">
+                        <Check size={14} />
+                    </div>
+                )}
+
+                <input ref={inputRef} type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
+            </div>
+
+            {status === 'success' && (
+                <p className="text-xs text-green-600 mt-1.5 flex items-center gap-1">
+                    <Check size={12} /> Image prête
+                </p>
             )}
 
-            {bg && (
-                <div className="absolute inset-0 bg-black/0 hover:bg-black/20 transition-colors flex items-center justify-center">
-                    <Upload size={18} className="text-white opacity-0 hover:opacity-100" />
-                </div>
+            {status === 'error' && errorMsg && (
+                <p className="text-xs text-red-500 mt-1.5 flex items-center gap-1">
+                    <AlertCircle size={12} /> {errorMsg}
+                </p>
             )}
-
-            {uploading && (
-                <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
-                    <span className="text-white text-xs font-medium">Envoi…</span>
-                </div>
-            )}
-
-            <input ref={inputRef} type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
         </div>
     )
 }

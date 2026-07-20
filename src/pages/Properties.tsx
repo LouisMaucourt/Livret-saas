@@ -22,7 +22,7 @@ import { Label } from '@/components/ui/Label';
   export const Properties = () => {
     const [title, setTitle] = useState('');
     const [imgUrl, setImgUrl] = useState('');
-    const [description, setDescription] = useState('');
+    const [descriptionI18n, setDescriptionI18n] = useState('');
     const [address, setAddress] = useState("")
     const [city, setCity] = useState("")
 
@@ -33,17 +33,27 @@ import { Label } from '@/components/ui/Label';
 
     const { user } = useUser()
 
-
-    console.log("user", data)
-    console.log(data)
-    const handleProperties = async () => {
-      // e.preventDefault()
+    const handleProperties = async (e, close) => {
+      e.preventDefault()
       await post(
         "/api/properties",
-        { userId: user?.id, title, city, address, imgUrl, description },
-        { refresh }
+        {
+          userId: user?.id,
+          title,
+          city,
+          address,
+          imgUrl,
+          description_i18n: descriptionI18n ? { fr: descriptionI18n } : {}
+        },
+        { refresh, close }
       )
+      setTitle('')
+      setCity('')
+      setAddress('')
+      setImgUrl('')
+      setDescriptionI18n('')
     }
+
     if (loading) return <Loading />
     if (error) return <Error />
     return (
@@ -73,10 +83,7 @@ import { Label } from '@/components/ui/Label';
         </div>
         <Dialog trigger={<Button icon={<Plus />} variant={hasData ? "absoluteCenter" : "absolute"}>{hasData ? "Enregistrez votre première propriété" : "Ajouter une propriété"}</Button>} title="Propriété">
           {({ close }) => (
-            <Form
-              onSubmit={async (e) => {
-                await handleProperties();
-              }}
+            <Form onSubmit={(e) => handleProperties(e, close)}
             >
               <ContentInput>
               <Label htmlFor="title">Nom de l'hébergement</Label>
@@ -119,8 +126,8 @@ import { Label } from '@/components/ui/Label';
                 <Textarea
                   id="description"
                   name="description"
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
+                  value={descriptionI18n}
+                  onChange={(e) => setDescriptionI18n(e.target.value)}
                 />
               </ContentInput>
 
