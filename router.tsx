@@ -1,12 +1,10 @@
 import { createBrowserRouter } from "react-router";
-import {  WifiPage } from "@/pages/Wifi";
-import { Home } from "@/components/layout/Home";
+import { WifiPage } from "@/pages/Wifi";
 import { Properties } from "@/pages/Properties";
 import { Login } from "@/components/Login";
-
 import RootLayout from "@/components/layout/RootLayout";
 import ProtectedLayout from "@/components/layout/ProtectedLayout";
-import { BookletLayout } from "@/components/layout/BookletLayout";
+import { HomeClient } from "@/pages/HomeClient";
 import { Checkin } from "@/pages/Checkin";
 import { Rules } from "@/pages/Rules";
 import { Contact } from "@/pages/Contact";
@@ -18,6 +16,7 @@ import { ScanPage } from "@/pages/Scan";
 import { InformationPage } from "@/pages/Informations";
 import { ThemePage } from "@/pages/Theme";
 import VerifyPage from "@/components/Vertify";
+import { ClientLayout } from "@/components/layout/ClientLayout";
 
 
 export const router = createBrowserRouter([
@@ -48,21 +47,21 @@ export const router = createBrowserRouter([
                         Component: Properties,
                     },
                     {
-                        path: "/properties/:id",  
-                        Component: BookletLayout,
+                        path: "/properties/:id",
+                        Component: ClientLayout,
                         children: [
-                            { index: true, Component: Home },   
+                            { index: true, Component: HomeClient },
                             { path: "wifi", Component: WifiPage },
-                            { path: "infos", Component: InformationPage },         
+                            { path: "infos", Component: InformationPage },
                             { path: "checkin", Component: Checkin },
-                            { path: "checkout", Component: Checkout },   
+                            { path: "checkout", Component: Checkout },
                             { path: "rules", Component: Rules },
                             { path: "contact", Component: Contact },
                             { path: "activity", element: <Places defaultCategory="activité" /> },
                             { path: "convenience", element: <Places defaultCategory="convenience" /> },
                             { path: "restaurants", element: <Places defaultCategory="restaurant" /> },
                         ],
-                        
+
                     },
                     {
                         path: "/properties/:id/theme",

@@ -1,6 +1,4 @@
 import { Error } from "@/components/Error";
-import { ClientLayout } from "@/components/layout/ClientLayout";
-import { ConditionalPhone } from "@/components/layout/ConditionalPhone";    
 import { Loading } from "@/components/Loading";
 import { Button } from "@/components/ui/Button"
 import { ContentInput } from "@/components/ui/ContentInput"
@@ -40,7 +38,7 @@ export const Rules = () => {
     const [partiesAllowed, setPartiesAllowed] = useState(false)
     const [additionalRulesI18n, setAdditionalRulesI8n] = useState("")
 
-    
+
     useEffect(() => {
         if (!rules) return
         setAdditionalRulesI8n(rules.additional_rules_i18n?.[lang] ?? "")
@@ -48,10 +46,10 @@ export const Rules = () => {
         setPetsAllowed(rules.pets_allowed ?? false)
         setSmokingAllowed(rules.smoking_allowed ?? false)
     }, [rules?.section_id, lang])
-    
-    if (loading) return <Loading/>
-    if (error) return <Error/>
-    
+
+    if (loading) return <Loading />
+    if (error) return <Error />
+
     // console.log(rules)
     const handleRules = async (e: React.FormEvent, close: () => void) => {
         e.preventDefault()
@@ -77,7 +75,7 @@ export const Rules = () => {
     return (
         <>
             <Dialog
-                trigger={<Button  size="big"icon={<Edit/>} variant="absolute"> Modifier</Button>}
+                trigger={<Button size="big" icon={<Edit />} variant="absolute"> Modifier</Button>}
                 title="Règles"
             >
                 {({ close }) => (
@@ -86,7 +84,7 @@ export const Rules = () => {
                         <ContentInput>
                             <Label htmlFor="smoking">Fumeur</Label>
                             <Input
-                            id="smoking"
+                                id="smoking"
                                 type="checkbox"
                                 checked={smokingAllowed}
                                 onChange={(e) => setSmokingAllowed(e.target.checked)}
@@ -132,61 +130,59 @@ export const Rules = () => {
                     </Form>
                 )}
             </Dialog>
-            <ConditionalPhone>
-                <ClientLayout />
-                          <div className="p-3">
-                    {hasData ? (
+
+            <div className="p-3">
+                {hasData ? (
                     <div className="p-3">
-                    <IconTitle
-                        title="Aucune information des Règles"
-                        icon={BookText}
-                            />
-                        </div>
+                        <IconTitle
+                            title="Aucune information des Règles"
+                            icon={BookText}
+                        />
+                    </div>
                 ) : (
                     <div className="">
-                                <IconTitle title={t.rules.title} icon={BookText} />
-                                <InfoSection title={t.rules.authorization} >
-                                    <InfoRow
-                                        icon={PartyPopper}
-                                        valueRow={
-                                            rules?.parties_allowed
-                                                ? t.rules.parties_allowed
-                                                : t.rules.parties_not_allowed
-                                        }
-                                        classNameIcon={rules?.parties_allowed ? "text-green-400" : "text-red-400"}
-                                    />
+                        <IconTitle title={t.rules.title} icon={BookText} />
+                        <InfoSection title={t.rules.authorization} >
+                            <InfoRow
+                                icon={PartyPopper}
+                                valueRow={
+                                    rules?.parties_allowed
+                                        ? t.rules.parties_allowed
+                                        : t.rules.parties_not_allowed
+                                }
+                                classNameIcon={rules?.parties_allowed ? "text-green-400" : "text-red-400"}
+                            />
 
-                                    <InfoRow
-                                        icon={AlarmSmoke}
-                                        valueRow={
-                                            rules?.smoking_allowed
-                                                ? t.rules.smoking_allowed
-                                                : t.rules.smoking_not_allowed
-                                        }
-                                        classNameIcon={rules?.smoking_allowed ? "text-green-400" : "text-red-400"}
-                                    />
+                            <InfoRow
+                                icon={AlarmSmoke}
+                                valueRow={
+                                    rules?.smoking_allowed
+                                        ? t.rules.smoking_allowed
+                                        : t.rules.smoking_not_allowed
+                                }
+                                classNameIcon={rules?.smoking_allowed ? "text-green-400" : "text-red-400"}
+                            />
 
-                                    <InfoRow
-                                        icon={AlarmSmoke}
-                                        valueRow={
-                                            rules?.pets_allowed
-                                                ? t.rules.pets_allowed
-                                                : t.rules.pets_not_allowed
-                                        }
-                                        classNameIcon={rules?.pets_allowed ? "text-green-400" : "text-red-400"}
-                                    />
+                            <InfoRow
+                                icon={AlarmSmoke}
+                                valueRow={
+                                    rules?.pets_allowed
+                                        ? t.rules.pets_allowed
+                                        : t.rules.pets_not_allowed
+                                }
+                                classNameIcon={rules?.pets_allowed ? "text-green-400" : "text-red-400"}
+                            />
                         </InfoSection>
-                                {hasAdditionalRules && (
-                                    <InfoSection title="À noter" className="relative pt-4">
-                                        <LangBadge i18nObject={rules.additional_rules_i18n ?? {}} currentLang={lang} className="absolute right-0" />
-                                        <InfoRow valueRow={rules.additional_rules_i18n?.[lang]} />
-                                    </InfoSection>
-                                )}
-                            
+                        {hasAdditionalRules && (
+                            <InfoSection title="À noter" className="relative pt-4">
+                                <LangBadge i18nObject={rules.additional_rules_i18n ?? {}} currentLang={lang} className="absolute right-0" />
+                                <InfoRow valueRow={rules.additional_rules_i18n?.[lang]} />
+                            </InfoSection>
+                        )}
+
                     </div>
-                    )}
-                </div>
-                </ConditionalPhone>
+                )}
+            </div>
         </>
     )
 }

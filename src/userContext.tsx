@@ -1,6 +1,7 @@
 import { createContext, ReactNode, useContext, useState } from "react";
 import { useApi } from "./hooks/useApi";
 import { propertiesApi } from "./service/userApi";
+import { Lang } from "./config/langues";
 
 export type User = {
     id: string,
@@ -18,7 +19,7 @@ export type Property = {
     created_at: string;
     title: string;
     img_url: string;
-    description_i18n: string;
+    description_i18n: Record<string, string>; 
     country: string;
     default_language: string;
     languages: string[];      
@@ -40,8 +41,8 @@ type UserContextType = {
     properties: Property[];
     setProperties: (properties: Property[]) => void;
     refreshProperties: () => Promise<void>;
-    lang: string;            
-    setLang: (lang: string) => void;
+    lang: Lang;
+    setLang: (lang: Lang) => void;
 };
 
 
@@ -51,11 +52,11 @@ export function UserProvider({ children }: { children: ReactNode }) {
     const [user, setUser] = useState<User | null>(null);
     const [client, setClient] = useState<Client | null>(null);
     const [properties, setProperties] = useState<Property[]>([]);
-    const [lang, setLang] = useState("fr"); 
+    const [lang, setLang] = useState<Lang>("fr"); 
 
     const setClientWithLang = (c: Client | null) => {
         setClient(c);
-        if (c?.language) setLang(c.language);
+        if (c?.language) setLang(c.language as Lang);
     };
     const refreshProperties = async () => {
         const data = await propertiesApi();

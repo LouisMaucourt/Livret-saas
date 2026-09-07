@@ -25,7 +25,6 @@ import { IconTitle } from '@/components/ui/IconTitle'
 import { LANGUAGE_LABELS } from '@/config/langues'
 import { APP_URL } from '@/config/url';
 import { useUser } from '@/userContext';
-import { Properties } from './Properties';
 
 type Client = {
   id: string
@@ -34,7 +33,7 @@ type Client = {
   is_active: boolean
   created_at: string
   qr_token: string
-  language: string
+  language: keyof typeof LANGUAGE_LABELS
 }
 
 export const Users = () => {
@@ -43,7 +42,6 @@ export const Users = () => {
 
   const { properties } = useUser();
   
-
   const { data, error, loading, refresh } = useApi(() => getClientsApi(id))
   const { post, errorPost, loadingPost } = usePostApi()
 
@@ -339,9 +337,7 @@ export const Users = () => {
                   </div>
                 )}
               </Dialog>
-
               <div className="w-px h-6 bg-gray-200 mx-2" />
-
               <button
                 type="button"
                 onClick={() => handleToggleActive(client)}
@@ -352,7 +348,6 @@ export const Users = () => {
               >
                 <PowerOff className="w-5 h-5" />
               </button>
-
               <Dialog
                 trigger={
                   <button className="p-3 rounded-xl text-red-400 hover:text-red-600 hover:bg-red-50 transition-colors">

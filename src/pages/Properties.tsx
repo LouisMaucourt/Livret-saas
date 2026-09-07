@@ -1,7 +1,7 @@
 
 import { useApi } from '@/hooks/useApi';
-  import { propertiesApi } from '@/service/userApi';
-  import{ useState } from 'react'
+import { propertiesApi } from '@/service/userApi';
+import{ FormEvent, useState } from 'react'
 import { Link } from 'react-router-dom';
 import { Dialog } from "@/components/ui/Dialog";
 import { Input } from '@/components/ui/Input';
@@ -31,9 +31,9 @@ import { Label } from '@/components/ui/Label';
     const hasData = !data?.length;
     const { post, errorPost, loadingPost } = usePostApi()
 
-    const { user } = useUser()
+    const { user, refreshProperties } = useUser()
 
-    const handleProperties = async (e, close) => {
+    const handleProperties = async (e: React.FormEvent, close : () => void) => {
       e.preventDefault()
       await post(
         "/api/properties",
@@ -52,6 +52,7 @@ import { Label } from '@/components/ui/Label';
       setAddress('')
       setImgUrl('')
       setDescriptionI18n('')
+      refreshProperties()
     }
 
     if (loading) return <Loading />

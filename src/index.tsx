@@ -8,10 +8,10 @@ import { Email } from "./components/ui/EmailRegister";
 import { verifyAuth } from "./middleware";
 import { SECTION_TITLES } from "./config/langues";
 import { fromI18n } from "./utilis/i18n";
+import { generateQrToken } from "./utilis/generateQrToken";
 
 
-const unauthorized = () =>
-  Response.json({ error: "Accès refusé" }, { status: 401 });
+const unauthorized = () => Response.json({ error: "Accès refusé" }, { status: 401 });
 
 const isProduction = process.env.NODE_ENV === "production";
 const secure = isProduction ? "; Secure" : "";
@@ -106,33 +106,29 @@ const server = serve({
     "/api/auth/scan": {
       async GET(req) {
         const token = new URL(req.url).searchParams.get("token")
-        if (!token) return Response.json({ error: "Token manquant" }, { status: 400 })
+        if (!token) return Response.json({ error: "QR Code invalide" }, { status: 400 })
 
-        try {
-          const payload = jwt.verify(token, process.env.JWT_SECRET!) as {
-            id: string; property_id: string; language: string
-          }
+        const [client] = await sql`
+      SELECT id, name, property_id, is_active, language
+      FROM clients WHERE qr_token = ${token}
+    `
 
-          const [client] = await sql`
-        SELECT id, name, property_id, is_active, language
-        FROM clients WHERE id = ${payload.id}
-      `
+        if (!client) return Response.json({ error: "QR Code invalide" }, { status: 404 })
+        if (!client.is_active) return Response.json({ error: "Compte désactivé" }, { status: 403 })
 
-          if (!client) return Response.json({ error: "Compte introuvable" }, { status: 404 })
-          if (!client.is_active) return Response.json({ error: "Compte désactivé" }, { status: 403 })
+        const sessionToken = jwt.sign(
+          { id: client.id, property_id: client.property_id, language: client.language, type: "client" },
+          process.env.JWT_SECRET!,
+          { expiresIn: "35d" }
+        )
 
-          const headers = new Headers({ "Content-Type": "application/json" })
-          headers.append("Set-Cookie", `token=${token}; ${cookieFlagsLong}`)
-          headers.append("Set-Cookie", `clientId=${client.id}; Path=/; Max-Age=2592000; SameSite=Lax${secure}`)
-
-          return new Response(
-            JSON.stringify({ ...client, language: payload.language ?? client.language ?? 'fr' }),
-            { status: 200, headers }
-          )
-        } catch {
-          return Response.json({ error: "Token invalide" }, { status: 401 })
-        }
-      }
+        const res = Response.json({ ...client, role: "guest" })
+        res.headers.set(
+          "Set-Cookie",
+          `token=${sessionToken}; HttpOnly; Path=/; Max-Age=${365 * 24 * 60 * 60}; SameSite=Lax`
+        )
+        return res
+      },
     },
     "/api/auth/me": {
       async GET(req) {
@@ -221,16 +217,15 @@ const server = serve({
         `;
 
         const { error } = await resend.emails.send({
-          from: "contact@livret.louismaucourt.fun",
+          from: "contact@carnetvoyageur.fr",
           to: body.email,
-          // from: 'Acme <onboarding@resend.dev>',
-          // to: "louis.maucourt7@gmail.com",
           subject: "Confirme ton inscription",
           react: <Email url={`${process.env.BASE_URL}/verify?token=${verifyToken}`} />,
         });
 
         if (error) {
-          console.error("❌ Erreur Resend:", JSON.stringify(error, null, 2));
+          console.error("❌ Erreur mail:", JSON.stringify(error, null, 2));
+          return Response.json({ ...user, emailError: error }, { status: 201 });
         }
 
         return Response.json(user);
@@ -317,11 +312,10 @@ const server = serve({
         const propertyId = new URL(req.url).searchParams.get("id")
 
         const clients = await sql`
-SELECT id, name, property_id, is_active, created_at, qr_token, language
-FROM clients
-WHERE property_id = ${propertyId}
-ORDER BY created_at ASC
-    `
+          SELECT id, name, property_id, is_active, created_at, qr_token, language
+          FROM clients
+          WHERE property_id = ${propertyId}
+          ORDER BY created_at ASC`
 
         return Response.json(clients)
       },
@@ -331,113 +325,42 @@ ORDER BY created_at ASC
 
         const body = await req.json()
         const password_hash = await Bun.password.hash(body.password)
+        const qr_token = generateQrToken()
 
         const [client] = await sql`
-      INSERT INTO clients (
-        property_id,
-        name,
-        password_hash,
-        language
-      )
-      VALUES (
-        ${body.property_id},
-        ${body.name},
-        ${password_hash},
-        ${body.language ?? "fr"}
-      )
-      RETURNING id, name, property_id, is_active, created_at, language
-    `
+    INSERT INTO clients (
+      property_id, name, password_hash, language, qr_token
+    )
+    VALUES (
+      ${body.property_id}, ${body.name}, ${password_hash},
+      ${body.language ?? "fr"}, ${qr_token}
+    )
+    RETURNING id, name, property_id, is_active, created_at, qr_token, language
+  `
 
-        const qr_token = jwt.sign(
-          {
-            id: client.id,
-            property_id: client.property_id,
-            language: client.language,
-            type: "client"
-          },
-          process.env.JWT_SECRET!,
-          { expiresIn: "365d" }
-        )
-
-        const [clientWithToken] = await sql`
-      UPDATE clients
-      SET qr_token = ${qr_token}
-      WHERE id = ${client.id}
-      RETURNING id, name, property_id, is_active, created_at, qr_token, language
-    `
-
-        return Response.json(clientWithToken, { status: 201 })
+        return Response.json(client, { status: 201 })
       },
 
       async PUT(req) {
         if (!verifyAuth(req)) return unauthorized()
-
         const body = await req.json()
 
-        if (body.password) {
-          const password_hash = await Bun.password.hash(body.password)
-
-          const [client] = await sql`
-        UPDATE clients
-        SET
-          password_hash = ${password_hash},
-          name = COALESCE(${body.name ?? null}, name),
-          is_active = COALESCE(${body.is_active ?? null}, is_active),
-          language = COALESCE(${body.language ?? null}, language)
-        WHERE id = ${body.id}
-        RETURNING id, name, property_id, is_active, created_at, language
-      `
-
-          const qr_token = jwt.sign(
-            {
-              id: client.id,
-              property_id: client.property_id,
-              language: client.language,
-              type: "client"
-            },
-            process.env.JWT_SECRET!,
-            { expiresIn: "365d" }
-          )
-
-          const [updatedClient] = await sql`
-        UPDATE clients
-        SET qr_token = ${qr_token}
-        WHERE id = ${client.id}
-        RETURNING id, name, property_id, is_active, created_at, qr_token, language
-      `
-
-          return Response.json(updatedClient)
-        }
+        const password_hash = body.password
+          ? await Bun.password.hash(body.password)
+          : null
 
         const [client] = await sql`
-      UPDATE clients
-      SET
-        name = COALESCE(${body.name ?? null}, name),
-        is_active = COALESCE(${body.is_active ?? null}, is_active),
-        language = COALESCE(${body.language ?? null}, language)
-      WHERE id = ${body.id}
-      RETURNING id, name, property_id, is_active, created_at, language
-    `
+    UPDATE clients
+    SET
+      password_hash = COALESCE(${password_hash}, password_hash),
+      name = COALESCE(${body.name ?? null}, name),
+      is_active = COALESCE(${body.is_active ?? null}, is_active),
+      language = COALESCE(${body.language ?? null}, language)
+    WHERE id = ${body.id}
+    RETURNING id, name, property_id, is_active, created_at, qr_token, language
+  `
 
-        const qr_token = jwt.sign(
-          {
-            id: client.id,
-            property_id: client.property_id,
-            language: client.language,
-            type: "client"
-          },
-          process.env.JWT_SECRET!,
-          { expiresIn: "365d" }
-        )
-
-        const [updatedClient] = await sql`
-      UPDATE clients
-      SET qr_token = ${qr_token}
-      WHERE id = ${client.id}
-      RETURNING id, name, property_id, is_active, created_at, qr_token, language
-    `
-
-        return Response.json(updatedClient)
+        return Response.json(client)
       },
 
       async DELETE(req) {
@@ -611,11 +534,11 @@ ORDER BY created_at ASC
         `
         return Response.json(contact)
       },
-      async DELETE(req) { 
+      async DELETE(req) {
         if (!verifyAuth(req)) return unauthorized()
         const body = await req.json()
         await sql`DELETE FROM contacts_details WHERE id = ${body.id}`
-        return Response.json({ok:true})
+        return Response.json({ ok: true })
       }
     },
     "/api/places": {

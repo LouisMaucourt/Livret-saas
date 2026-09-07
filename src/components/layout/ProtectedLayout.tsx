@@ -1,14 +1,14 @@
 import { Navigate, Outlet } from "react-router";
-import { useEffect, useState } from "react";
-import OwnerDashboard from "./Dashboard";
+import React, { useEffect, useState } from "react";
+import OwnerDashboard from "./OwnerDashboard";
 import { useUser } from "@/userContext";
-import { TestLayout } from "./TestLayout";
+import { ClientLayout } from "./ClientLayout";
 
 
 export default function ProtectedLayout() {
     const [loading, setLoading] = useState(true);
     const { user, setUser, setProperties } = useUser();
-    
+
     useEffect(() => {
         fetch("/api/auth/me", { credentials: "include" })
             .then((res) => { if (!res.ok) throw new Error(); return res.json(); })
@@ -38,7 +38,7 @@ export default function ProtectedLayout() {
 
     const layouts = {
         owner: OwnerDashboard,
-        guest: TestLayout,
+        guest: React.Fragment,
     };
     const Layout = layouts[user.role] ?? OwnerDashboard;
 

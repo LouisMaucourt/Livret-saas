@@ -1,7 +1,4 @@
 import { Error } from '@/components/Error';
-import { ClientLayout } from '@/components/layout/ClientLayout';
-import { ConditionalPhone } from '@/components/layout/ConditionalPhone';
-import { Phone } from '@/components/layout/Phone'
 import { Loading } from '@/components/Loading';
 import { Button } from '@/components/ui/Button'
 import { ContentInput } from '@/components/ui/ContentInput';
@@ -83,29 +80,25 @@ export const Checkout = () => {
     if (error) return <Error />
     return (
         <>
-            <ConditionalPhone>
-                <ClientLayout />
-                {!hasData ? (
-                    <div className="h-full my-auto flex justify-center items-center -mt-20">
-                        <IconTitle title="Ajouter les informations de départ" icon={DoorClosed} />
-                    </div>
-                ) : (
-                    <div className="p-3">
-                            <IconTitle title={t.checkin_checkout.departure} icon={DoorClosed} />
-                            <InfoSection title={t.checkin_checkout.arrival_time}>
-                                <InfoRow icon={LogOut} nameRow={t.checkin_checkout.departure} valueRow={formatHour(checkIn.checkout ?? "")} />
+            {!hasData ? (
+                <div className="h-full my-auto flex justify-center items-center -mt-20">
+                    <IconTitle title="Ajouter les informations de départ" icon={DoorClosed} />
+                </div>
+            ) : (
+                <div className="p-3">
+                    <IconTitle title={t.checkin_checkout.departure} icon={DoorClosed} />
+                    <InfoSection title={t.checkin_checkout.arrival_time}>
+                        <InfoRow icon={LogOut} nameRow={t.checkin_checkout.departure} valueRow={formatHour(checkIn.checkout ?? "")} />
+                    </InfoSection>
+                    {checkIn.instructions_leave_i18n?.[lang] && (
+                        <InfoSection title={t.checkin_checkout.departure_instruction} className="pt-4 relative">
+                            <LangBadge i18nObject={checkIn.instructions_i18n!} currentLang={lang} className="absolute right-0" />
+
+                            <InfoRow valueRow={checkIn.instructions_leave_i18n?.[lang]} />
                         </InfoSection>
-                            {checkIn.instructions_leave_i18n?.[lang] && (
-                                <InfoSection title={t.checkin_checkout.departure_instruction} className="pt-4 relative">
-                                    <LangBadge i18nObject={checkIn.instructions_i18n!} currentLang={lang} className="absolute right-0" />
-
-                                        <InfoRow valueRow={checkIn.instructions_leave_i18n?.[lang]} />
-                                </InfoSection>
-                            )}
-                    </div>
-                )}
-            </ConditionalPhone>
-
+                    )}
+                </div>
+            )}
             <Dialog trigger={<Button size="big" icon={hasData ? <Edit /> : <Plus />} variant="absolute">{hasData ? 'Modifier' : 'Ajouter'}</Button>} title="Check-in">
                 {({ close }) => (
                     <Form onSubmit={(e) => handleCheckin(e, close)} className="p-4 space-y-4">

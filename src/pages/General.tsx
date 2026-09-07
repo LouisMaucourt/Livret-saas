@@ -10,16 +10,14 @@ import { InfoSection } from '@/components/ui/InfoSection';
 import { Input } from '@/components/ui/Input';
 import { Label } from '@/components/ui/Label';
 import { LangBadge } from '@/components/ui/LangBadge';
-import { SwitchLanguages } from '@/components/ui/SwitchLanguages';
 import { Textarea } from '@/components/ui/Textarea';
 import { LANGUAGE_LABELS } from '@/config/langues';
 import { useApi } from '@/hooks/useApi';
 import { usePostApi } from '@/hooks/usePostApi';
-import { setI18nValue } from '@/lib/utilis';
 import { propertiesApi } from '@/service/userApi';
-import { Property, User, useUser } from '@/userContext';
-import { Edit, Flag, Globe, Home, MapPin } from 'lucide-react';
-import React, { useEffect, useState } from 'react'
+import { Property, useUser } from '@/userContext';
+import { Edit, Home } from 'lucide-react';
+import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router';
 
 
@@ -27,7 +25,7 @@ export const General = () => {
     const navigate = useNavigate()
     const { id } = useParams()
     const { lang } = useUser()
-    const { data, loading, refresh } = useApi<Property[]>(() => propertiesApi())
+    const { data, refresh } = useApi<Property[]>(() => propertiesApi())
 
     const property = data?.find(c => c.id === id)
     const [title, setTitle] = useState('')
@@ -47,7 +45,7 @@ export const General = () => {
         setCity(property?.city ?? '')
         setAddress(property?.address ?? '')
         setDescriptionI18n(property?.description_i18n ?? {})
-        setLanguages(property?.languages ?? ['fr'])  
+        setLanguages(property?.languages ?? ['fr'])
     }, [property?.id])
 
     if (!data) return null
@@ -73,7 +71,7 @@ export const General = () => {
             },
             { close, method: "PUT", refresh }
         )
-        refreshProperties?.()
+        refreshProperties()
     }
 
     const DeleteProperties = async (e: React.FormEvent, close: () => void) => {
@@ -90,22 +88,28 @@ export const General = () => {
         <div>
             <div>
                 <>
-                    <IconTitle title="Général" icon={Home} />  
+                    <IconTitle title="Général" icon={Home} />
                     <Card className="my-5 p-8">
-                        <InfoSection title="Mode de langues">
-                            {property && <SwitchLanguages variant="grey" data={property} />}
+                        <InfoSection title="Langues disponibles">
+                            <div className="flex flex-wrap gap-2">
+                                {((property?.languages ?? ['fr']) as Array<keyof typeof LANGUAGE_LABELS>).map((code) => (
+                                    <span key={code} className="px-3 py-1 rounded-full text-sm bg-violet-100 text-violet-700 border border-violet-200">
+                                        {LANGUAGE_LABELS[code] ?? code}
+                                    </span>
+                                ))}
+                            </div>
                         </InfoSection>
-                    </Card>                         
+                    </Card>
                     <Card className="p-8">
                         <div className="flex flex-col gap-3">
-
-                            <InfoSection title="Hébergement">
-                                <InfoRow valueRow={property?.title} />
-                            </InfoSection>
-
+                            {property?.title && 
+                                <InfoSection title="Hébergement">
+                                    <InfoRow valueRow={property?.title} />
+                                </InfoSection>
+                            }
                             <InfoSection title="Localisation">
-                                <InfoRow valueRow={property.city} />
-                                <InfoRow valueRow={property.address} />
+                                {property?.city && <InfoRow valueRow={property.city} />}
+                                {property?.address && <InfoRow valueRow={property.address} />} 
                             </InfoSection>
 
                             <div>
@@ -115,24 +119,14 @@ export const General = () => {
                                         i18nObject={descriptionI18n}
                                         currentLang={lang}
                                         className="absolute right-0 shadow-2xl"
-                                        
+
                                     />
-                                    <InfoRow valueRow={property?.description_i18n?.[lang]} />
+                                    <InfoRow valueRow={descriptionI18n[lang]} />
                                 </InfoSection>
-</div>
+                            </div>
+                           
 
-
-                            <InfoSection title="Langues disponibles">
-                                <div className="flex flex-wrap gap-2">
-                                    {((property?.languages ?? ['fr']) as Array<keyof typeof LANGUAGE_LABELS>).map((code) => (
-                                        <span key={code} className="px-3 py-1 rounded-full text-sm bg-violet-100 text-violet-700 border border-violet-200">
-                                            {LANGUAGE_LABELS[code] ?? code}
-                                        </span>
-                                    ))}
-                                </div>
-                            </InfoSection>
-
-                            {(imgUrl || property.img_url) ? (
+                            {(imgUrl || property?.img_url) ? (
                                 <InfoSection title="Photo">
                                     <div className="relative w-full h-[50vh] overflow-hidden rounded-lg">
                                         <div

@@ -1,6 +1,4 @@
 import { Error } from '@/components/Error';
-import { ClientLayout } from '@/components/layout/ClientLayout';
-import { ConditionalPhone } from '@/components/layout/ConditionalPhone';
 import { Loading } from '@/components/Loading';
 import { Button } from '@/components/ui/Button'
 import { ContentInput } from '@/components/ui/ContentInput';
@@ -16,7 +14,7 @@ import { Textarea } from '@/components/ui/Textarea'
 import { useApi } from '@/hooks/useApi'
 import { usePostApi } from '@/hooks/usePostApi';
 import { useTranslation } from '@/hooks/useTranslation';
-import {  setI18nValue } from '@/lib/utilis';
+import { setI18nValue } from '@/lib/utilis';
 import { stayDetailsApi } from '@/service/userApi'
 import { useUser } from '@/userContext';
 import { formatHour } from '@/utilis/formatHour';
@@ -36,7 +34,7 @@ export type StayDetails = {
   checkin: string | null
   checkout: string | null
   instructions_i18n: Record<string, string> | null
-  instructions_leave_i18n: Record<string, string> | null  
+  instructions_leave_i18n: Record<string, string> | null
   key_access_type: string | null
   key_access_info: string | null
 }
@@ -58,13 +56,13 @@ export const Checkin = () => {
 
   const checkIn = data?.[0]
   const hasData = !!checkIn?.checkin
-  
+
 
   useEffect(() => {
     if (!checkIn) return
     setCheckInTime(checkIn.checkin ?? "")
-    setInstructionI18n(checkIn.instructions_i18n?.[lang] ?? "") 
-    setKeyInfo(checkIn.key_access_info ?? "")      
+    setInstructionI18n(checkIn.instructions_i18n?.[lang] ?? "")
+    setKeyInfo(checkIn.key_access_info ?? "")
     setKeyAccessType(checkIn.key_access_type ?? ACCESS_TYPES[0].value)
   }, [checkIn?.section_id, lang])
 
@@ -95,50 +93,46 @@ export const Checkin = () => {
   if (error) return <Error />
   return (
     <>
-        <ConditionalPhone>
-          <ClientLayout />
-          {!hasData ? (
-            
-            <div className="h-full my-auto flex justify-center items-center -mt-20">
-              <IconTitle title="Ajouter les informations d'arrivée !" icon={DoorOpen} />
-            </div>
+      {!hasData ? (
 
-        ) : (
-          <div className="p-3">
-              <IconTitle title={t.checkin_checkout.arrival} icon={DoorOpen} />
-            <div className="flex flex-col gap-3">
-                <InfoSection title={t.checkin_checkout.arrival_time}>
-                  <InfoRow icon={LogIn} nameRow={t.checkin_checkout.arrival} valueRow={formatHour(checkIn.checkin ?? "")} />
+        <div className="h-full my-auto flex justify-center items-center -mt-20">
+          <IconTitle title="Ajouter les informations d'arrivée !" icon={DoorOpen} />
+        </div>
+
+      ) : (
+        <div className="p-3">
+          <IconTitle title={t.checkin_checkout.arrival} icon={DoorOpen} />
+          <div className="flex flex-col gap-3">
+            <InfoSection title={t.checkin_checkout.arrival_time}>
+              <InfoRow icon={LogIn} nameRow={t.checkin_checkout.arrival} valueRow={formatHour(checkIn.checkin ?? "")} />
             </InfoSection>
-                <InfoSection title={t.checkin_checkout.access}>
+            <InfoSection title={t.checkin_checkout.access}>
 
               <InfoRow icon={KeyRound} valueRow={accessLabel ?? checkIn.key_access_type}>
-                    {needCode && checkIn.key_access_info && ( 
-                      <span className="bg-black text-white font-mono text-sm px-3 py-1 rounded-lg tracking-widest">
-                        {checkIn.key_access_info}
-                      </span>
-                    )}
+                {needCode && checkIn.key_access_info && (
+                  <span className="bg-black text-white font-mono text-sm px-3 py-1 rounded-lg tracking-widest">
+                    {checkIn.key_access_info}
+                  </span>
+                )}
               </InfoRow>
             </InfoSection>
-                <InfoSection title={t.checkin_checkout.arrival_instruction} className="relative">
-                    
-                      <LangBadge i18nObject={checkIn.instructions_i18n!} currentLang={lang} className="absolute right-0"/>
-                      <InfoRow valueRow={checkIn?.instructions_i18n?.[lang]} />              
-                  </InfoSection>
-              </div>
-          </div>
-          )}
-        </ConditionalPhone>
+            <InfoSection title={t.checkin_checkout.arrival_instruction} className="relative">
 
-      <Dialog trigger={<Button icon={hasData ? <Edit /> : <Plus />} size="big"variant="absolute">{hasData ? 'Modifier' : 'Ajouter'}</Button>} title="Check-in">
+              <LangBadge i18nObject={checkIn.instructions_i18n!} currentLang={lang} className="absolute right-0" />
+              <InfoRow valueRow={checkIn?.instructions_i18n?.[lang] ?? null} />
+            </InfoSection>
+          </div>
+        </div>
+      )}
+      <Dialog trigger={<Button icon={hasData ? <Edit /> : <Plus />} size="big" variant="absolute">{hasData ? 'Modifier' : 'Ajouter'}</Button>} title="Check-in">
         {({ close }) => (
           <Form onSubmit={(e) => handleCheckin(e, close)} className="p-4 space-y-4">
 
-              <ContentInput>
-                <Label htmlFor="checkin-time">Arrivée</Label>
-                <Input id="checkin-time" type="time" value={checkInTime}
-                  onChange={(e) => setCheckInTime(e.target.value)} />
-              </ContentInput>
+            <ContentInput>
+              <Label htmlFor="checkin-time">Arrivée</Label>
+              <Input id="checkin-time" type="time" value={checkInTime}
+                onChange={(e) => setCheckInTime(e.target.value)} />
+            </ContentInput>
 
             <ContentInput>
               <Label htmlFor="hour">Type d'accès</Label>
@@ -150,7 +144,7 @@ export const Checkin = () => {
                     onClick={() => setKeyAccessType(t.value)}
                     className={`flex flex-col items-center gap-1 p-2 rounded-lg border text-xs transition-colors
                       ${keyAccessType === t.value
-                      ? 'border-violet-500 bg-violet-50 text-violet-800'
+                        ? 'border-violet-500 bg-violet-50 text-violet-800'
                         : 'border-gray-200 text-gray-500 hover:bg-gray-50'
                       }`}
                   >

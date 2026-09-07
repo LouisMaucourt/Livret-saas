@@ -1,7 +1,6 @@
 import jwt from "jsonwebtoken";
 
-export const cookie = req.headers.get("cookie");
-export const verifyAuth = (req) => {
+export const verifyAuth = (req: Request) => {
   const cookie = req.headers.get("cookie");
 
   if (!cookie) {
@@ -17,10 +16,16 @@ export const verifyAuth = (req) => {
     return null;
   }
 
+  const secret = process.env.JWT_SECRET;
+
+  if (!secret) {
+    return null;
+  }
+
   try {
     const decoded = jwt.verify(
       token,
-      process.env.JWT_SECRET
+      secret
     );
 
     return decoded;

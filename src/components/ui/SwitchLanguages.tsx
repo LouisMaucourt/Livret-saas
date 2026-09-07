@@ -17,13 +17,13 @@ export const SwitchLanguages = ({ data, variant = "default" }: Props) => {
 
     return (
         <div>
-            {data?.languages && data.languages.length > 1 && (
+            {data?.languages && data.languages.length >= 1 && (
                 <div className="flex gap-1.5 mt-2 text-white">
                     {data.languages.map((code) => (
                         <button
                             key={code}
                             type="button"
-                            onClick={() => setLang(code)}
+                            onClick={() => setLang(code as Parameters<typeof setLang>[0])}
                             className={`cursor-pointer px-2.5 py-0.5 rounded-full text-xs font-medium border transition
     ${lang === code
                                     ? 'bg-violet-600 text-white border-violet-600'

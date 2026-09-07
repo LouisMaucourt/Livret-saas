@@ -1,9 +1,5 @@
 import {  User, useUser } from "@/userContext";
 import { DropDown } from "../ui/DropDown";
-import { Card } from "../ui/Card";
-
-import React, { useState } from "react";
-
 import { BtnIcon } from "../ui/BtnIcon";
 import { HomeIcon, House, Info, InfoIcon, Paintbrush, User as Usericon, Users } from "lucide-react";
 import { useParams } from "react-router";
@@ -11,8 +7,6 @@ import { Wifi, LogIn, LogOut, ScrollText, Phone, MapPin } from 'lucide-react'
 import { addCookie, getCookie } from "@/utilis/cookies";
 import { useApi } from "@/hooks/useApi";
 import { propertiesApi } from "@/service/userApi";
-import { usePostApi } from "@/hooks/usePostApi";
-import { Phone as Phonetemplate } from "@/components/layout/Phone"
 import { Button } from "../ui/Button";
 import { Link } from "react-router";
 import { NavSection } from "../ui/NavSection";
