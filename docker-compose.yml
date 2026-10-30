@@ -1,32 +1,36 @@
 services:
   db:
     image: postgres:16
-    restart: unless-stopped
+    restart: always
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: ${POSTGRES_DB}
-    ports:
-      - "5433:5432"
     volumes:
-      - pgdata-dev:/var/lib/postgresql/data
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - dokploy-network
 
   app:
     build: .
-    ports:
-      - "3000:3000"
+    restart: always
+    expose:
+      - "3000"
     environment:
       DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
       JWT_SECRET: ${JWT_SECRET}
       RESEND_API: ${RESEND_API}
-      BASE_URL: http://localhost:3000
-      NODE_ENV: development
+      BASE_URL: ${BASE_URL}
+      NODE_ENV: production
     depends_on:
       - db
-    volumes:
-      - .:/app
-      - /app/node_modules
-    command: bun --hot src/index.tsx
+    networks:
+      - dokploy-network
+    command: bun src/index.tsx
+
+networks:
+  dokploy-network:
+    external: true
 
 volumes:
-  pgdata-dev:
+  pgdata:
