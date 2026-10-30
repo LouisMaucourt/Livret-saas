@@ -1,4 +1,4 @@
-import { LucideIcon, DoorOpen, DoorClosed, ClipboardList, Phone, Info, Wifi, Pin } from 'lucide-react'
+import { type LucideIcon, DoorOpen, DoorClosed, ClipboardList, Phone, Info, Wifi, Pin } from 'lucide-react'
 
 type SectionKey = keyof typeof SECTION_TITLES;
 

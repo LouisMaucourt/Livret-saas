@@ -1,188 +1,197 @@
-import { Error } from "@/components/Error";
+import { ErrorMessage } from "@/components/ErrorMessage";
 import { Loading } from "@/components/Loading";
-import { Button } from "@/components/ui/Button"
-import { ContentInput } from "@/components/ui/ContentInput"
-import { Dialog } from "@/components/ui/Dialog"
-import { Form } from "@/components/ui/Form"
-import { IconTitle } from "@/components/ui/IconTitle"
-import { InfoRow } from "@/components/ui/InfoRow"
-import { InfoSection } from "@/components/ui/InfoSection"
-import { Input } from "@/components/ui/Input"
-import { Label } from "@/components/ui/Label"
+import { Button } from "@/components/ui/Button";
+import { ContentInput } from "@/components/ui/ContentInput";
+import { Dialog } from "@/components/ui/Dialog";
+import { Form } from "@/components/ui/Form";
+import { IconTitle } from "@/components/ui/IconTitle";
+import { InfoRow } from "@/components/ui/InfoRow";
+import { InfoSection } from "@/components/ui/InfoSection";
+import { Input } from "@/components/ui/Input";
+import { Label } from "@/components/ui/Label";
 import { LangBadge } from "@/components/ui/LangBadge";
-import { Textarea } from "@/components/ui/Textarea"
-import { useApi } from "@/hooks/useApi"
-import { usePostApi } from "@/hooks/usePostApi"
+import { Textarea } from "@/components/ui/Textarea";
+import { useApi } from "@/hooks/useApi";
+import { usePostApi } from "@/hooks/usePostApi";
 import { useTranslation } from "@/hooks/useTranslation";
 import { setI18nValue } from "@/lib/utilis";
-import { getRulesApi } from "@/service/userApi"
+import { getRulesApi } from "@/service/userApi";
 import { useUser } from "@/userContext";
-import { AlarmSmoke, BookText, Edit, PartyPopper } from "lucide-react"
-import { useEffect, useState } from "react"
-import { useParams } from "react-router"
+import { AlarmSmoke, BookText, Edit, PartyPopper } from "lucide-react";
+import { useEffect, useState } from "react";
+import { useParams } from "react-router";
 
 export const Rules = () => {
-    const t = useTranslation()
-    const { id } = useParams()
-    const { lang } = useUser()
+	const t = useTranslation();
+	const { id } = useParams();
+	const { lang } = useUser();
 
-    const { data, error, loading, refresh } = useApi(() => getRulesApi(id))
-    const { post, errorPost, loadingPost } = usePostApi()
+	const { data, error, loading, refresh } = useApi(() => getRulesApi(id));
+	const { post, errorPost, loadingPost } = usePostApi();
 
-    const rules = data?.[0]
+	const rules = data?.[0];
 
-    const hasData = !rules
+	const hasData = !rules;
 
-    const [smokingAllowed, setSmokingAllowed] = useState(false)
-    const [petsAllowed, setPetsAllowed] = useState(false)
-    const [partiesAllowed, setPartiesAllowed] = useState(false)
-    const [additionalRulesI18n, setAdditionalRulesI8n] = useState("")
+	const [smokingAllowed, setSmokingAllowed] = useState(false);
+	const [petsAllowed, setPetsAllowed] = useState(false);
+	const [partiesAllowed, setPartiesAllowed] = useState(false);
+	const [additionalRulesI18n, setAdditionalRulesI8n] = useState("");
 
+	useEffect(() => {
+		if (!rules) return;
+		setAdditionalRulesI8n(rules.additional_rules_i18n?.[lang] ?? "");
+		setPartiesAllowed(rules.parties_allowed ?? false);
+		setPetsAllowed(rules.pets_allowed ?? false);
+		setSmokingAllowed(rules.smoking_allowed ?? false);
+	}, [rules?.section_id, lang]);
 
-    useEffect(() => {
-        if (!rules) return
-        setAdditionalRulesI8n(rules.additional_rules_i18n?.[lang] ?? "")
-        setPartiesAllowed(rules.parties_allowed ?? false)
-        setPetsAllowed(rules.pets_allowed ?? false)
-        setSmokingAllowed(rules.smoking_allowed ?? false)
-    }, [rules?.section_id, lang])
+	if (loading) return <Loading />;
+	if (error) return <ErrorMessage />;
 
-    if (loading) return <Loading />
-    if (error) return <Error />
+	// console.log(rules)
+	const handleRules = async (e: React.FormEvent, close: () => void) => {
+		e.preventDefault();
 
-    // console.log(rules)
-    const handleRules = async (e: React.FormEvent, close: () => void) => {
-        e.preventDefault()
+		await post(
+			"/api/rules",
+			{
+				sectionId: rules?.section_id,
+				smokingAllowed,
+				petsAllowed,
+				partiesAllowed,
+				additionalRules_i18n: setI18nValue(
+					rules?.additional_rules_i18n,
+					lang,
+					additionalRulesI18n,
+				),
+			},
+			{ close, refresh },
+		);
+	};
 
-        await post(
-            "/api/rules",
-            {
-                sectionId: rules?.section_id,
-                smokingAllowed,
-                petsAllowed,
-                partiesAllowed,
-                additionalRules_i18n: setI18nValue(
-                    rules?.additional_rules_i18n,
-                    lang,
-                    additionalRulesI18n
-                )
-            },
-            { close, refresh }
-        )
-    }
-    const hasAdditionalRules = Object.values(rules.additional_rules_i18n ?? {}).some(v => v)
+	return (
+		<>
+			<Dialog
+				trigger={
+					<Button size="big" icon={<Edit />} variant="absolute">
+						{" "}
+						Modifier
+					</Button>
+				}
+				title="Règles"
+			>
+				{({ close }) => (
+					<Form
+						onSubmit={(e) => handleRules(e, close)}
+						className="p-4 space-y-4"
+					>
+						<ContentInput>
+							<Label htmlFor="smoking">Fumeur</Label>
+							<Input
+								id="smoking"
+								type="checkbox"
+								checked={smokingAllowed}
+								onChange={(e) => setSmokingAllowed(e.target.checked)}
+							/>
+						</ContentInput>
 
-    return (
-        <>
-            <Dialog
-                trigger={<Button size="big" icon={<Edit />} variant="absolute"> Modifier</Button>}
-                title="Règles"
-            >
-                {({ close }) => (
-                    <Form onSubmit={(e) => handleRules(e, close)} className="p-4 space-y-4">
+						<ContentInput>
+							<Label htmlFor="animal">Animaux</Label>
+							<Input
+								type="checkbox"
+								id="animal"
+								checked={petsAllowed}
+								onChange={(e) => setPetsAllowed(e.target.checked)}
+							/>
+						</ContentInput>
 
-                        <ContentInput>
-                            <Label htmlFor="smoking">Fumeur</Label>
-                            <Input
-                                id="smoking"
-                                type="checkbox"
-                                checked={smokingAllowed}
-                                onChange={(e) => setSmokingAllowed(e.target.checked)}
-                            />
-                        </ContentInput>
+						<ContentInput>
+							<Label htmlFor="party">Fêtes</Label>
+							<Input
+								id="paarrt"
+								type="checkbox"
+								checked={partiesAllowed}
+								onChange={(e) => setPartiesAllowed(e.target.checked)}
+							/>
+						</ContentInput>
 
-                        <ContentInput>
-                            <Label htmlFor="animal">Animaux</Label>
-                            <Input
-                                type="checkbox"
-                                id="animal"
-                                checked={petsAllowed}
-                                onChange={(e) => setPetsAllowed(e.target.checked)}
-                            />
-                        </ContentInput>
+						<ContentInput className="flex flex-col gap-1.5">
+							<Label htmlFor="rules">Règles supplémentaires</Label>
+							<Textarea
+								id="rules"
+								value={additionalRulesI18n}
+								onChange={(e) => setAdditionalRulesI8n(e.target.value)}
+							/>
+						</ContentInput>
 
-                        <ContentInput>
-                            <Label htmlFor="party">Fêtes</Label>
-                            <Input
-                                id="paarrt"
-                                type="checkbox"
-                                checked={partiesAllowed}
-                                onChange={(e) => setPartiesAllowed(e.target.checked)}
-                            />
-                        </ContentInput>
+						{errorPost && <p className="text-red-500 text-sm">{errorPost}</p>}
 
-                        <ContentInput className="flex flex-col gap-1.5">
-                            <Label htmlFor="rules">Règles supplémentaires</Label>
-                            <Textarea
-                                id="rules"
-                                value={additionalRulesI18n}
-                                onChange={(e) => setAdditionalRulesI8n(e.target.value)}
-                            />
-                        </ContentInput>
+						<Button type="submit" disabled={loadingPost} className="w-full">
+							{loadingPost ? "Enregistrement..." : "Enregistrer"}
+						</Button>
+					</Form>
+				)}
+			</Dialog>
 
-                        {errorPost && (
-                            <p className="text-red-500 text-sm">{errorPost}</p>
-                        )}
+			<div className="p-3">
+				{hasData ? (
+					<div className="p-3">
+						<IconTitle title="Aucune information des Règles" icon={BookText} />
+					</div>
+				) : (
+					<div className="">
+						<IconTitle title={t.rules.title} icon={BookText} />
+						<InfoSection title={t.rules.authorization}>
+							<InfoRow
+								icon={PartyPopper}
+								valueRow={
+									rules?.parties_allowed
+										? t.rules.parties_allowed
+										: t.rules.parties_not_allowed
+								}
+								classNameIcon={
+									rules?.parties_allowed ? "text-green-400" : "text-red-400"
+								}
+							/>
 
-                        <Button type="submit" disabled={loadingPost} className="w-full">
-                            {loadingPost ? "Enregistrement..." : "Enregistrer"}
-                        </Button>
-                    </Form>
-                )}
-            </Dialog>
+							<InfoRow
+								icon={AlarmSmoke}
+								valueRow={
+									rules?.smoking_allowed
+										? t.rules.smoking_allowed
+										: t.rules.smoking_not_allowed
+								}
+								classNameIcon={
+									rules?.smoking_allowed ? "text-green-400" : "text-red-400"
+								}
+							/>
 
-            <div className="p-3">
-                {hasData ? (
-                    <div className="p-3">
-                        <IconTitle
-                            title="Aucune information des Règles"
-                            icon={BookText}
-                        />
-                    </div>
-                ) : (
-                    <div className="">
-                        <IconTitle title={t.rules.title} icon={BookText} />
-                        <InfoSection title={t.rules.authorization} >
-                            <InfoRow
-                                icon={PartyPopper}
-                                valueRow={
-                                    rules?.parties_allowed
-                                        ? t.rules.parties_allowed
-                                        : t.rules.parties_not_allowed
-                                }
-                                classNameIcon={rules?.parties_allowed ? "text-green-400" : "text-red-400"}
-                            />
-
-                            <InfoRow
-                                icon={AlarmSmoke}
-                                valueRow={
-                                    rules?.smoking_allowed
-                                        ? t.rules.smoking_allowed
-                                        : t.rules.smoking_not_allowed
-                                }
-                                classNameIcon={rules?.smoking_allowed ? "text-green-400" : "text-red-400"}
-                            />
-
-                            <InfoRow
-                                icon={AlarmSmoke}
-                                valueRow={
-                                    rules?.pets_allowed
-                                        ? t.rules.pets_allowed
-                                        : t.rules.pets_not_allowed
-                                }
-                                classNameIcon={rules?.pets_allowed ? "text-green-400" : "text-red-400"}
-                            />
-                        </InfoSection>
-                        {hasAdditionalRules && (
-                            <InfoSection title="À noter" className="relative pt-4">
-                                <LangBadge i18nObject={rules.additional_rules_i18n ?? {}} currentLang={lang} className="absolute right-0" />
-                                <InfoRow valueRow={rules.additional_rules_i18n?.[lang]} />
-                            </InfoSection>
-                        )}
-
-                    </div>
-                )}
-            </div>
-        </>
-    )
-}
+							<InfoRow
+								icon={AlarmSmoke}
+								valueRow={
+									rules?.pets_allowed
+										? t.rules.pets_allowed
+										: t.rules.pets_not_allowed
+								}
+								classNameIcon={
+									rules?.pets_allowed ? "text-green-400" : "text-red-400"
+								}
+							/>
+						</InfoSection>
+						{rules?.additional_rules_i18n?.[lang] && (
+							<InfoSection title={t.rules.title} className="relative pt-4">
+								<LangBadge
+									i18nObject={rules.additional_rules_i18n ?? {}}
+									currentLang={lang}
+									className="absolute right-0"
+								/>
+								<InfoRow valueRow={rules.additional_rules_i18n?.[lang]} />
+							</InfoSection>
+						)}
+					</div>
+				)}
+			</div>
+		</>
+	);
+};

@@ -1,9 +1,13 @@
-import { useIsOwner } from '@/hooks/userRole';
-import { Phone } from '@/components/ui/Phone'
+import { useIsOwner } from "@/hooks/userRole";
+import { Phone } from "@/components/ui/Phone";
 
-export const ConditionalPhone = ({ children }: { children: React.ReactNode }) => {
-    const isOwner = useIsOwner()
-    return isOwner
-        ? <Phone>{children}</Phone>
-        : <div className="flex flex-col min-h-screen ">{children}</div>
-}
+export const ConditionalPhone = ({
+	children,
+}: { children: React.ReactNode }) => {
+	const isOwner = useIsOwner();
+	return isOwner ? (
+		<Phone>{children}</Phone>
+	) : (
+		<div className="flex flex-col min-h-screen bg-white ">{children}</div>
+	);
+};

@@ -1,90 +1,189 @@
-import {  User, useUser } from "@/userContext";
+import { type User, useUser } from "@/userContext";
 import { DropDown } from "../ui/DropDown";
 import { BtnIcon } from "../ui/BtnIcon";
-import { HomeIcon, House, Info, InfoIcon, Paintbrush, User as Usericon, Users } from "lucide-react";
-import { useParams } from "react-router";
-import { Wifi, LogIn, LogOut, ScrollText, Phone, MapPin } from 'lucide-react'
+import {
+	HomeIcon,
+	House,
+	Info,
+	InfoIcon,
+	Menu as MenuIcon,
+	Paintbrush,
+	User as Usericon,
+	Users,
+	X,
+	Wifi,
+	LogIn,
+	LogOut,
+	ScrollText,
+	Phone,
+	MapPin,
+} from "lucide-react";
+import { Link, useLocation, useParams } from "react-router";
 import { addCookie, getCookie } from "@/utilis/cookies";
 import { useApi } from "@/hooks/useApi";
 import { propertiesApi } from "@/service/userApi";
 import { Button } from "../ui/Button";
-import { Link } from "react-router";
 import { NavSection } from "../ui/NavSection";
+import { useEffect, useState } from "react";
 
+export default function OwnerDashboard({
+	children,
+}: { children: React.ReactNode }) {
+	const { user, properties } = useUser();
+	const { id } = useParams();
+	const { pathname } = useLocation();
+	const { data } = useApi<User[]>(() => propertiesApi());
+	const [openMenu, setOpenMenu] = useState(false); // fermé par défaut sur mobile/tablette
 
+	const idx = id || getCookie("propertyId") || properties[0]?.id;
+	const propertiesData = data ?? [];
+	const p = data?.find((e) => e.id === idx);
 
-export default function OwnerDashboard({ children }: { children: React.ReactNode }) {
+	// referme le menu après chaque navigation
+	useEffect(() => {
+		setOpenMenu(false);
+	}, [pathname]);
 
+	const logOut = async () => {
+		await fetch("/api/auth/logout", { method: "POST", credentials: "include" });
+		window.location.href = "/login";
+	};
 
-    const { user, properties } = useUser();
-    const { id } = useParams()
-    const { data } = useApi<User[]>(() => propertiesApi())
+	return (
+		<div className="flex relative">
+			<div className="hidden xl:block w-52 shrink-0" />
 
-    const idx = id || getCookie("propertyId") || properties[0]?.id
+			<button
+				type="button"
+				onClick={() => setOpenMenu((prev) => !prev)}
+				aria-label={openMenu ? "Fermer le menu" : "Ouvrir le menu"}
+				className="xl:hidden fixed top-3 left-3 z-40 p-2 rounded-lg bg-white border border-black/[0.06] shadow-xs"
+			>
+				{openMenu ? <X size={20} /> : <MenuIcon size={20} />}
+			</button>
 
-    const propertiesData = data ?? []
+			{openMenu && (
+				<button
+					type="button"
+					className="xl:hidden fixed inset-0 bg-black/30 z-10"
+					onClick={() => setOpenMenu(false)}
+				/>
+			)}
 
-    const p = data?.find((e) => e.id === idx)
+			{/* Sidebar */}
+			<div
+				className={`fixed left-0 top-0 h-screen w-52 flex flex-col justify-between p-3
+				bg-white xl:bg-white/55 backdrop-blur-xl border-r border-black/[0.06] z-30
+				transition-transform duration-200
+				${openMenu ? "translate-x-0" : "-translate-x-full"} xl:translate-x-0`}
+			>
+				<div className="flex flex-col pt-12 xl:pt-0">
+					<DropDown title={p?.title ?? properties[0]?.title} icon={House}>
+						<p className="text-xs text-gray-400 mb-3">Mes propriétés</p>
+						{propertiesData.map((property) => (
+							<Link
+								to={`/properties/${property.id}`}
+								key={property.id}
+								onClick={() => addCookie("propertyId", property.id)}
+							>
+								{property.title}
+							</Link>
+						))}
+						<Link to="/properties" className="w-full">
+							<Button className="mt-5 w-full">Ajouter une propriété</Button>
+						</Link>
+					</DropDown>
 
-    const logOut = async () => {
-        await fetch("/api/auth/logout", { method: "POST", credentials: "include" });
-        window.location.href = "/login";
-    }
-    return (
-        <div className="flex">
-            <div className="w-52 shrink-0" />
+					<div className="flex flex-col gap-10">
+						<NavSection label="Pages">
+							<BtnIcon to={`/properties/${idx}/`} icon={<HomeIcon size={15} />}>
+								Menu
+							</BtnIcon>
+							<BtnIcon
+								to={`/properties/${idx}/infos`}
+								icon={<InfoIcon size={15} />}
+							>
+								Informations
+							</BtnIcon>
+							<BtnIcon to={`/properties/${idx}/wifi`} icon={<Wifi size={15} />}>
+								Wifi
+							</BtnIcon>
+							<BtnIcon
+								to={`/properties/${idx}/checkin`}
+								icon={<LogIn size={15} />}
+							>
+								Arrivée
+							</BtnIcon>
+							<BtnIcon
+								to={`/properties/${idx}/checkout`}
+								icon={<LogOut size={15} />}
+							>
+								Départ
+							</BtnIcon>
+							<BtnIcon
+								to={`/properties/${idx}/rules`}
+								icon={<ScrollText size={15} />}
+							>
+								Règles
+							</BtnIcon>
+							<BtnIcon
+								to={`/properties/${idx}/contact`}
+								icon={<Phone size={15} />}
+							>
+								Contact
+							</BtnIcon>
+							<BtnIcon
+								to={`/properties/${idx}/convenience`}
+								icon={<MapPin size={15} />}
+							>
+								Lieux
+							</BtnIcon>
+						</NavSection>
 
-            <div className="fixed left-0 top-0 h-screen w-52 flex flex-col justify-between p-3
-        bg-white/55 backdrop-blur-xl border-r border-black/[0.06] z-10">
-                <div className="flex flex-col">
-                    <DropDown title={p?.title ?? properties[0]?.title} icon={House}>
-                        <p className="text-xs text-gray-400 mb-3">Mes propriétés</p>
-                        {propertiesData.map((property) => (
-                            <Link to={`/properties/${property.id}`} key={property.id} onClick={() => addCookie("propertyId", property.id)}>
-                                {property.title}
-                            </Link>
-                        ))}
-                        <Link to="/properties" className="w-full">
-                            <Button className="mt-5 w-full">Ajouter une propriété</Button>
-                        </Link>
-                    </DropDown>
-                    <div className="flex flex-col gap-10">
-                        <NavSection label="Pages">
-                            <BtnIcon to={`/properties/${idx}/`} icon={<HomeIcon size={15} />}>Menu</BtnIcon>
-                            <BtnIcon to={`/properties/${idx}/infos`} icon={<InfoIcon size={15} />}>Informations</BtnIcon>
-                            <BtnIcon to={`/properties/${idx}/wifi`} icon={<Wifi size={15} />}>Wifi</BtnIcon>
-                            <BtnIcon to={`/properties/${idx}/checkin`} icon={<LogIn size={15} />}>Arrivée</BtnIcon>
-                            <BtnIcon to={`/properties/${idx}/checkout`} icon={<LogOut size={15} />}>Départ</BtnIcon>
-                            <BtnIcon to={`/properties/${idx}/rules`} icon={<ScrollText size={15} />}>Règles</BtnIcon>
-                            <BtnIcon to={`/properties/${idx}/contact`} icon={<Phone size={15} />}>Contact</BtnIcon>
-                            <BtnIcon to={`/properties/${idx}/convenience`} icon={<MapPin size={15} />}>Lieux</BtnIcon>
-                        </NavSection>
+						<hr className="my-2.5 border-black/[0.06]" />
 
-                        <hr className="my-2.5 border-black/[0.06]" />
+						<NavSection label="Général">
+							<BtnIcon
+								to={`/properties/${idx}/general`}
+								icon={<Info size={15} />}
+							>
+								Informations
+							</BtnIcon>
+							<BtnIcon
+								to={`/properties/${idx}/users`}
+								icon={<Users size={15} />}
+							>
+								Clients
+							</BtnIcon>
+							<BtnIcon
+								to={`/properties/${idx}/theme`}
+								icon={<Paintbrush size={15} />}
+							>
+								Customisation
+							</BtnIcon>
+						</NavSection>
+					</div>
+				</div>
 
-                        <NavSection label="Général">
-                            <BtnIcon to={`/properties/${idx}/general`} icon={<Info size={15} />}>Informations</BtnIcon>
-                            <BtnIcon to={`/properties/${idx}/users`} icon={<Users size={15} />}>Clients</BtnIcon>
-                            <BtnIcon to={`/properties/${idx}/theme`} icon={<Paintbrush size={15} />}>Customisation</BtnIcon>
-                        </NavSection>
+				<DropDown
+					title={user?.name ?? "Utilisateur"}
+					icon={Usericon}
+					align="bottom"
+				>
+					<p className="text-xs text-gray-400">Mon compte</p>
+					<button
+						type="button"
+						onClick={logOut}
+						className="text-red-500 hover:bg-red-50 w-full text-left p-2"
+					>
+						Déconnexion
+					</button>
+				</DropDown>
+			</div>
 
-                    </div>
-                </div>
-
-                <DropDown title={user?.name ?? "Utilisateur"} icon={Usericon} align="bottom" >
-                    <p className="text-xs text-gray-400">Mon compte</p>
-                    <button
-                        onClick={() => logOut()}
-                        className="text-red-500 hover:bg-red-50 w-full text-left p-2"
-                    >
-                        Déconnexion
-                    </button>
-                </DropDown>
-            </div>
-
-            <div className="p-6 w-full min-h-screen">
-                {children}
-            </div>
-        </div>
-    );
+			<div className="md:p-6  md:pt-16 p-6 xl:pt-6 w-full min-h-screen">
+				{children}
+			</div>
+		</div>
+	);
 }

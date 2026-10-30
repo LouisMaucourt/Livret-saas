@@ -10,8 +10,8 @@ import { SECTION_TITLES } from "./config/langues";
 import { fromI18n } from "./utilis/i18n";
 import { generateQrToken } from "./utilis/generateQrToken";
 
-
-const unauthorized = () => Response.json({ error: "Accès refusé" }, { status: 401 });
+const unauthorized = () =>
+	Response.json({ error: "Accès refusé" }, { status: 401 });
 
 const isProduction = process.env.NODE_ENV === "production";
 const secure = isProduction ? "; Secure" : "";
@@ -19,315 +19,410 @@ const cookieFlags = `HttpOnly; Path=/; Max-Age=604800; SameSite=Lax${secure}`;
 const cookieFlagsLong = `HttpOnly; Path=/; Max-Age=2592000; SameSite=Lax${secure}`;
 
 const server = serve({
-  routes: {
-    "/api/upload": {
-      async POST(req: Request) {
-        if (!verifyAuth(req)) return unauthorized()
-        const formData = await req.formData();
-        const file = formData.get("file") as File;
-        const fileName = formData.get("fileName") as string;
+	routes: {
+		"/api/upload": {
+			async POST(req: Request) {
+				if (!verifyAuth(req)) return unauthorized();
+				const formData = await req.formData();
+				const file = formData.get("file") as File;
+				const fileName = formData.get("fileName") as string;
 
-        if (!file || !fileName) {
-          return Response.json({ error: "Fichier ou nom manquant" }, { status: 400 });
-        }
+				if (!file || !fileName) {
+					return Response.json(
+						{ error: "Fichier ou nom manquant" },
+						{ status: 400 },
+					);
+				}
 
-        const buffer = await file.arrayBuffer();
-        await Bun.write(`./public/images/${fileName}`, buffer);
+				const buffer = await file.arrayBuffer();
+				await Bun.write(`./public/images/${fileName}`, buffer);
 
-        return Response.json({ ok: true });
-      },
-    },
-    "/images/*": async (req) => {
-      const url = new URL(req.url);
-      const filePath = `./public${url.pathname}`;
-      const file = Bun.file(filePath);
+				return Response.json({ ok: true });
+			},
+		},
+		"/images/*": async (req) => {
+			const url = new URL(req.url);
+			const filePath = `./public${url.pathname}`;
+			const file = Bun.file(filePath);
 
-      if (await file.exists()) {
-        return new Response(file);
-      }
-      return new Response("Not found", { status: 404 });
-    },
-    "/*": index,
-    "/api/auth/logout": {
-      async POST() {
-        const headers = new Headers({ "Content-Type": "application/json" });
-        headers.append("Set-Cookie", `token=; HttpOnly; Path=/; Max-Age=0; SameSite=Lax${secure}`);
-        headers.append("Set-Cookie", `userId=; Path=/; Max-Age=0; SameSite=Lax${secure}`);
-        headers.append("Set-Cookie", `propertyId=; Path=/; Max-Age=0; SameSite=Lax${secure}`);
-        headers.append("Set-Cookie", `clientId=; Path=/; Max-Age=0; SameSite=Lax${secure}`);
-        return new Response(JSON.stringify({ ok: true }), { status: 200, headers });
-      }
-    },
-    "/api/auth/login": {
-      async POST(req) {
-        const body = await req.json();
+			if (await file.exists()) {
+				return new Response(file);
+			}
+			return new Response("Not found", { status: 404 });
+		},
+		"/*": index,
+		"/api/auth/logout": {
+			async POST() {
+				const headers = new Headers({ "Content-Type": "application/json" });
+				headers.append(
+					"Set-Cookie",
+					`token=; HttpOnly; Path=/; Max-Age=0; SameSite=Lax${secure}`,
+				);
+				headers.append(
+					"Set-Cookie",
+					`userId=; Path=/; Max-Age=0; SameSite=Lax${secure}`,
+				);
+				headers.append(
+					"Set-Cookie",
+					`propertyId=; Path=/; Max-Age=0; SameSite=Lax${secure}`,
+				);
+				headers.append(
+					"Set-Cookie",
+					`clientId=; Path=/; Max-Age=0; SameSite=Lax${secure}`,
+				);
+				return new Response(JSON.stringify({ ok: true }), {
+					status: 200,
+					headers,
+				});
+			},
+		},
+		"/api/auth/login": {
+			async POST(req) {
+				const body = await req.json();
 
-        if (!body.email || !body.password) {
-          return Response.json({ error: "Champs manquants" }, { status: 400 });
-        }
+				if (!body.email || !body.password) {
+					return Response.json({ error: "Champs manquants" }, { status: 400 });
+				}
 
-        const [user] = await sql`
+				const [user] = await sql`
           SELECT id, email, name, role, password_hash
           FROM users
           WHERE email = ${body.email}
         `;
 
-        if (!user) {
-          return Response.json({ error: "Email ou mot de passe incorrect" }, { status: 401 });
-        }
+				if (!user) {
+					return Response.json(
+						{ error: "Email ou mot de passe incorrect" },
+						{ status: 401 },
+					);
+				}
 
-        const valid = await Bun.password.verify(body.password, user.password_hash);
+				const valid = await Bun.password.verify(
+					body.password,
+					user.password_hash,
+				);
 
-        if (!valid) {
-          return Response.json({ error: "Email ou mot de passe incorrect" }, { status: 401 });
-        }
+				if (!valid) {
+					return Response.json(
+						{ error: "Email ou mot de passe incorrect" },
+						{ status: 401 },
+					);
+				}
 
-        const { password_hash, ...safeUser } = user;
+				const { password_hash, ...safeUser } = user;
 
-        const jwtSecret = process.env.JWT_SECRET;
-        if (!jwtSecret) {
-          return Response.json({ error: "Server configuration error" }, { status: 500 });
-        }
+				const jwtSecret = process.env.JWT_SECRET;
+				if (!jwtSecret) {
+					return Response.json(
+						{ error: "Server configuration error" },
+						{ status: 500 },
+					);
+				}
 
-        const token = jwt.sign(
-          { id: user.id, role: user.role },
-          jwtSecret,
-          { expiresIn: "7d" }
-        );
+				const token = jwt.sign({ id: user.id, role: user.role }, jwtSecret, {
+					expiresIn: "7d",
+				});
 
-        const headers = new Headers();
-        headers.set("Content-Type", "application/json");
-        headers.append("Set-Cookie", `token=${token}; ${cookieFlags}`);
-        headers.append("Set-Cookie", `userId=${user.id}; Path=/; Max-Age=604800; SameSite=Lax${secure}`);
+				const headers = new Headers();
+				headers.set("Content-Type", "application/json");
+				headers.append("Set-Cookie", `token=${token}; ${cookieFlags}`);
+				headers.append(
+					"Set-Cookie",
+					`userId=${user.id}; Path=/; Max-Age=604800; SameSite=Lax${secure}`,
+				);
 
-        return new Response(JSON.stringify(safeUser), { status: 200, headers });
-      }
-    },
-    "/api/auth/scan": {
-      async GET(req) {
-        const token = new URL(req.url).searchParams.get("token")
-        if (!token) return Response.json({ error: "QR Code invalide" }, { status: 400 })
+				return new Response(JSON.stringify(safeUser), { status: 200, headers });
+			},
+		},
+		"/api/auth/scan": {
+			async GET(req) {
+				try {
+					const token = new URL(req.url).searchParams.get("token");
+					if (!token) {
+						return Response.json(
+							{ error: "QR Code invalide" },
+							{ status: 400 },
+						);
+					}
 
-        const [client] = await sql`
-      SELECT id, name, property_id, is_active, language
-      FROM clients WHERE qr_token = ${token}
-    `
+					const [client] = await sql`
+				SELECT id, name, property_id, is_active, language
+				FROM clients WHERE qr_token = ${token}
+			`;
+					if (!client) {
+						return Response.json(
+							{ error: "QR Code invalide" },
+							{ status: 404 },
+						);
+					}
+					if (!client.is_active) {
+						return Response.json(
+							{ error: "Compte désactivé" },
+							{ status: 403 },
+						);
+					}
 
-        if (!client) return Response.json({ error: "QR Code invalide" }, { status: 404 })
-        if (!client.is_active) return Response.json({ error: "Compte désactivé" }, { status: 403 })
+					const maxAge = 35 * 24 * 60 * 60; // same as the JWT expiry
 
-        const sessionToken = jwt.sign(
-          { id: client.id, property_id: client.property_id, language: client.language, type: "client" },
-          process.env.JWT_SECRET!,
-          { expiresIn: "35d" }
-        )
+					const sessionToken = jwt.sign(
+						{
+							id: client.id,
+							property_id: client.property_id,
+							language: client.language,
+							type: "client",
+						},
+						process.env.JWT_SECRET!,
+						{ expiresIn: maxAge },
+					);
 
-        const res = Response.json({ ...client, role: "guest" })
-        res.headers.set(
-          "Set-Cookie",
-          `token=${sessionToken}; HttpOnly; Path=/; Max-Age=${365 * 24 * 60 * 60}; SameSite=Lax`
-        )
-        return res
-      },
-    },
-    "/api/auth/me": {
-      async GET(req) {
-        const token = getCookieServer(req, "token")
+					const res = Response.json({ ...client, role: "guest" });
+					res.headers.set(
+						"Set-Cookie",
+						`token=${sessionToken}; HttpOnly; Path=/; Max-Age=${maxAge}; SameSite=Lax`,
+					);
+					return res;
+				} catch (err) {
+					console.error("[/api/auth/scan]", err);
+					return Response.json({ error: "Erreur serveur" }, { status: 500 });
+				}
+			},
+		},
+		"/api/auth/me": {
+			async GET(req) {
+				const token = getCookieServer(req, "token");
 
-        if (!token) {
-          return Response.json({ error: "Non authentifié" }, { status: 401 });
-        }
+				if (!token) {
+					return Response.json({ error: "Non authentifié" }, { status: 401 });
+				}
 
-        try {
-          const jwtSecret = process.env.JWT_SECRET;
-          if (!jwtSecret) {
-            return Response.json({ error: "Server configuration error" }, { status: 500 });
-          }
+				try {
+					const jwtSecret = process.env.JWT_SECRET;
+					if (!jwtSecret) {
+						return Response.json(
+							{ error: "Server configuration error" },
+							{ status: 500 },
+						);
+					}
 
-          const payload = jwt.verify(token, jwtSecret) as { id: string; role?: string; type?: string };
+					const payload = jwt.verify(token, jwtSecret) as {
+						id: string;
+						role?: string;
+						type?: string;
+					};
 
-          if (payload.type === "client") {
-            const [client] = await sql`
+					if (payload.type === "client") {
+						const [client] = await sql`
               SELECT id, name, property_id, is_active
               FROM clients WHERE id = ${payload.id}
-            `
-            if (!client) return Response.json({ error: "Client introuvable" }, { status: 404 });
-            if (!client.is_active) return Response.json({ error: "Compte désactivé" }, { status: 403 });
+            `;
+						if (!client)
+							return Response.json(
+								{ error: "Client introuvable" },
+								{ status: 404 },
+							);
+						if (!client.is_active)
+							return Response.json(
+								{ error: "Compte désactivé" },
+								{ status: 403 },
+							);
 
-            return Response.json({ ...client, role: "guest" });
-          }
+						return Response.json({ ...client, role: "guest" });
+					}
 
-          const [user] = await sql`
+					const [user] = await sql`
             SELECT id, email, name, role
             FROM users WHERE id = ${payload.id}
           `;
 
-          if (!user) return Response.json({ error: "Utilisateur introuvable" }, { status: 404 });
+					if (!user)
+						return Response.json(
+							{ error: "Utilisateur introuvable" },
+							{ status: 404 },
+						);
 
-          return Response.json(user);
+					return Response.json(user);
+				} catch {
+					return Response.json({ error: "Token invalide" }, { status: 401 });
+				}
+			},
+		},
+		"/api/auth/register": {
+			async POST(req) {
+				const body = await req.json();
 
-        } catch {
-          return Response.json({ error: "Token invalide" }, { status: 401 });
-        }
-      },
-    },
-    "/api/auth/register": {
-      async POST(req) {
-        const body = await req.json();
+				if (!body.email || !body.password) {
+					return Response.json({ error: "Champs manquants" }, { status: 400 });
+				}
 
-        if (!body.email || !body.password) {
-          return Response.json({ error: "Champs manquants" }, { status: 400 });
-        }
+				const password_hash = await Bun.password.hash(body.password);
 
-        const password_hash = await Bun.password.hash(body.password);
+				let user;
 
-        let user;
-
-        try {
-          [user] = await sql`
+				try {
+					[user] = await sql`
             INSERT INTO users (name, email, password_hash)
             VALUES (${body.name}, ${body.email}, ${password_hash})
             RETURNING id, email, name, role, created_at
           `;
 
-          const token = jwt.sign(
-            { id: user.id },
-            process.env.JWT_SECRET!,
-            { expiresIn: "1d" }
-          );
+					const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET!, {
+						expiresIn: "1d",
+					});
 
-          const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+					const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
 
-          await sql`
+					await sql`
             INSERT INTO email_verifications (user_id, token, expires_at)
             VALUES (${user.id}, ${token}, ${expiresAt})
             RETURNING *
           `;
-        } catch (e: any) {
-          if (e.code === "23505") {
-            return Response.json({ error: "Email déjà utilisé" }, { status: 409 });
-          }
-          return Response.json({ error: "Erreur serveur" }, { status: 500 });
-        }
+				} catch (e: any) {
+					if (e.code === "23505") {
+						return Response.json(
+							{ error: "Email déjà utilisé" },
+							{ status: 409 },
+						);
+					}
+					return Response.json({ error: "Erreur serveur" }, { status: 500 });
+				}
 
-        const resend = new Resend(process.env.RESEND_API);
+				const resend = new Resend(process.env.RESEND_API);
 
-        const [{ token: verifyToken }] = await sql`
+				const [{ token: verifyToken }] = await sql`
           SELECT token FROM email_verifications WHERE user_id = ${user.id}
         `;
 
-        const { error } = await resend.emails.send({
-          from: "contact@carnetvoyageur.fr",
-          to: body.email,
-          subject: "Confirme ton inscription",
-          react: <Email url={`${process.env.BASE_URL}/verify?token=${verifyToken}`} />,
-        });
+				const { error } = await resend.emails.send({
+					from: "contact@carnetvoyageur.fr",
+					to: body.email,
+					subject: "Confirme ton inscription",
+					react: (
+						<Email
+							url={`${process.env.BASE_URL}/verify?token=${verifyToken}`}
+						/>
+					),
+				});
 
-        if (error) {
-          console.error("❌ Erreur mail:", JSON.stringify(error, null, 2));
-          return Response.json({ ...user, emailError: error }, { status: 201 });
-        }
+				if (error) {
+					console.error("❌ Erreur mail:", JSON.stringify(error, null, 2));
+					return Response.json({ ...user, emailError: error }, { status: 201 });
+				}
 
-        return Response.json(user);
-      }
-    },
-    "/api/auth/register/token": {
-      async POST(req) {
-        const body = await req.json()
-        const token = body.token
+				return Response.json(user);
+			},
+		},
+		"/api/auth/register/token": {
+			async POST(req) {
+				const body = await req.json();
+				const token = body.token;
 
-        if (!token) {
-          return Response.json({ error: "Token manquant" }, { status: 400 });
-        }
+				if (!token) {
+					return Response.json({ error: "Token manquant" }, { status: 400 });
+				}
 
-        let payload: any;
-        try {
-          payload = jwt.verify(token, process.env.JWT_SECRET!);
-        } catch (e) {
-          return Response.json({ error: "Token invalide ou expiré" }, { status: 401 });
-        }
+				let payload: any;
+				try {
+					payload = jwt.verify(token, process.env.JWT_SECRET!);
+				} catch (e) {
+					return Response.json(
+						{ error: "Token invalide ou expiré" },
+						{ status: 401 },
+					);
+				}
 
-        const [verification] = await sql`
+				const [verification] = await sql`
           SELECT * FROM email_verifications
           WHERE token = ${token} AND expires_at > NOW()
         `;
 
-        if (!verification) {
-          return Response.json({ error: "Token expiré ou déjà utilisé" }, { status: 401 });
-        }
+				if (!verification) {
+					return Response.json(
+						{ error: "Token expiré ou déjà utilisé" },
+						{ status: 401 },
+					);
+				}
 
-        const [user] = await sql`
+				const [user] = await sql`
           SELECT id, email, name, role FROM users WHERE id = ${payload.id}
         `;
 
-        await sql`DELETE FROM email_verifications WHERE token = ${token}`;
+				await sql`DELETE FROM email_verifications WHERE token = ${token}`;
 
-        const sessionToken = jwt.sign(
-          { id: user.id, role: user.role },
-          process.env.JWT_SECRET!,
-          { expiresIn: "30d" }
-        );
+				const sessionToken = jwt.sign(
+					{ id: user.id, role: user.role },
+					process.env.JWT_SECRET!,
+					{ expiresIn: "30d" },
+				);
 
-        const headers = new Headers({ "Content-Type": "application/json" });
-        headers.append("Set-Cookie", `token=${sessionToken}; ${cookieFlagsLong}`);
-        headers.append("Set-Cookie", `userId=${user.id}; Path=/; Max-Age=2592000; SameSite=Lax${secure}`);
+				const headers = new Headers({ "Content-Type": "application/json" });
+				headers.append(
+					"Set-Cookie",
+					`token=${sessionToken}; ${cookieFlagsLong}`,
+				);
+				headers.append(
+					"Set-Cookie",
+					`userId=${user.id}; Path=/; Max-Age=2592000; SameSite=Lax${secure}`,
+				);
 
-        return new Response(JSON.stringify(user), { status: 200, headers });
-      }
-    },
-    "/api/users": {
-      async GET(req) {
-        if (!verifyAuth(req)) return unauthorized()
-        const users = await sql`SELECT * FROM users ORDER BY id DESC`;
-        return Response.json(users);
-      },
-      async POST(req) {
-        const body = await req.json();
+				return new Response(JSON.stringify(user), { status: 200, headers });
+			},
+		},
+		"/api/users": {
+			async GET(req) {
+				if (!verifyAuth(req)) return unauthorized();
+				const users = await sql`SELECT * FROM users ORDER BY id DESC`;
+				return Response.json(users);
+			},
+			async POST(req) {
+				const body = await req.json();
 
-        if (!body.email || !body.password) {
-          return Response.json({ error: "Champs manquants" }, { status: 400 });
-        }
+				if (!body.email || !body.password) {
+					return Response.json({ error: "Champs manquants" }, { status: 400 });
+				}
 
-        const password_hash = await Bun.password.hash(body.password);
+				const password_hash = await Bun.password.hash(body.password);
 
-        try {
-          const [user] = await sql`
+				try {
+					const [user] = await sql`
             INSERT INTO users (name, email, password_hash)
             VALUES (${body.name}, ${body.email}, ${password_hash})
             RETURNING id, email, name, role, created_at
           `;
-          return Response.json(user, { status: 201 });
-        } catch (e: any) {
-          if (e.code === "23505") {
-            return Response.json({ error: "Email déjà utilisé" }, { status: 409 });
-          }
-          return Response.json({ error: "Erreur serveur" }, { status: 500 });
-        }
-      },
-    },
-    "/api/clients": {
-      async GET(req) {
-        if (!verifyAuth(req)) return unauthorized()
+					return Response.json(user, { status: 201 });
+				} catch (e: any) {
+					if (e.code === "23505") {
+						return Response.json(
+							{ error: "Email déjà utilisé" },
+							{ status: 409 },
+						);
+					}
+					return Response.json({ error: "Erreur serveur" }, { status: 500 });
+				}
+			},
+		},
+		"/api/clients": {
+			async GET(req) {
+				if (!verifyAuth(req)) return unauthorized();
 
-        const propertyId = new URL(req.url).searchParams.get("id")
+				const propertyId = new URL(req.url).searchParams.get("id");
 
-        const clients = await sql`
+				const clients = await sql`
           SELECT id, name, property_id, is_active, created_at, qr_token, language
           FROM clients
           WHERE property_id = ${propertyId}
-          ORDER BY created_at ASC`
+          ORDER BY created_at ASC`;
 
-        return Response.json(clients)
-      },
+				return Response.json(clients);
+			},
 
-      async POST(req) {
-        if (!verifyAuth(req)) return unauthorized()
+			async POST(req) {
+				if (!verifyAuth(req)) return unauthorized();
 
-        const body = await req.json()
-        const password_hash = await Bun.password.hash(body.password)
-        const qr_token = generateQrToken()
+				const body = await req.json();
+				const password_hash = await Bun.password.hash(body.password);
+				const qr_token = generateQrToken();
 
-        const [client] = await sql`
+				const [client] = await sql`
     INSERT INTO clients (
       property_id, name, password_hash, language, qr_token
     )
@@ -336,20 +431,20 @@ const server = serve({
       ${body.language ?? "fr"}, ${qr_token}
     )
     RETURNING id, name, property_id, is_active, created_at, qr_token, language
-  `
+  `;
 
-        return Response.json(client, { status: 201 })
-      },
+				return Response.json(client, { status: 201 });
+			},
 
-      async PUT(req) {
-        if (!verifyAuth(req)) return unauthorized()
-        const body = await req.json()
+			async PUT(req) {
+				if (!verifyAuth(req)) return unauthorized();
+				const body = await req.json();
 
-        const password_hash = body.password
-          ? await Bun.password.hash(body.password)
-          : null
+				const password_hash = body.password
+					? await Bun.password.hash(body.password)
+					: null;
 
-        const [client] = await sql`
+				const [client] = await sql`
     UPDATE clients
     SET
       password_hash = COALESCE(${password_hash}, password_hash),
@@ -358,31 +453,31 @@ const server = serve({
       language = COALESCE(${body.language ?? null}, language)
     WHERE id = ${body.id}
     RETURNING id, name, property_id, is_active, created_at, qr_token, language
-  `
+  `;
 
-        return Response.json(client)
-      },
+				return Response.json(client);
+			},
 
-      async DELETE(req) {
-        if (!verifyAuth(req)) return unauthorized()
+			async DELETE(req) {
+				if (!verifyAuth(req)) return unauthorized();
 
-        const body = await req.json()
+				const body = await req.json();
 
-        await sql`
+				await sql`
       DELETE FROM clients
       WHERE id = ${body.id}
-    `
+    `;
 
-        return Response.json({ ok: true })
-      }
-    },
-    "/api/infos": {
-      async GET(req) {
-        if (!verifyAuth(req)) return unauthorized()
-        const params = new URL(req.url).searchParams
-        const propertyId = params.get("id")
-        const lang = params.get("lang") ?? "fr"
-        const infos = await sql`
+				return Response.json({ ok: true });
+			},
+		},
+		"/api/infos": {
+			async GET(req) {
+				if (!verifyAuth(req)) return unauthorized();
+				const params = new URL(req.url).searchParams;
+				const propertyId = params.get("id");
+				const lang = params.get("lang") ?? "fr";
+				const infos = await sql`
     SELECT 
       sections.id as section_id,
       infos_details.id,
@@ -395,20 +490,20 @@ const server = serve({
     WHERE sections.property_id = ${propertyId}
     AND sections.type = 'infos'
     ORDER BY infos_details.sort_order
-  `
+  `;
 
-        const result = infos.map((row) => ({
-          ...row,
-          title: fromI18n(row.title_i18n, lang),
-          description: fromI18n(row.description_i18n, lang),
-        }))
-        return Response.json(result)
-      },
+				const result = infos.map((row) => ({
+					...row,
+					title: fromI18n(row.title_i18n, lang),
+					description: fromI18n(row.description_i18n, lang),
+				}));
+				return Response.json(result);
+			},
 
-      async POST(req) {
-        if (!verifyAuth(req)) return unauthorized()
-        const body = await req.json()
-        const [infos] = await sql`
+			async POST(req) {
+				if (!verifyAuth(req)) return unauthorized();
+				const body = await req.json();
+				const [infos] = await sql`
     INSERT INTO infos_details (section_id, title_i18n, description_i18n, img_url, sort_order)
     VALUES (
       ${body.sectionId},
@@ -418,14 +513,14 @@ const server = serve({
       COALESCE((SELECT MAX(sort_order) + 1 FROM infos_details WHERE section_id = ${body.sectionId}), 0)
     )
     RETURNING *
-  `
-        return Response.json(infos)
-      },
+  `;
+				return Response.json(infos);
+			},
 
-      async PUT(req) {
-        if (!verifyAuth(req)) return unauthorized()
-        const body = await req.json()
-        const [infos] = await sql`
+			async PUT(req) {
+				if (!verifyAuth(req)) return unauthorized();
+				const body = await req.json();
+				const [infos] = await sql`
     UPDATE infos_details
     SET
       title_i18n = title_i18n || ${sql.json(body.titleI18n)},
@@ -433,80 +528,80 @@ const server = serve({
       img_url = ${body.imgUrl}
     WHERE id = ${body.id}
     RETURNING *
-  `
-        return Response.json(infos)
-      },
-      async DELETE(req) {
-        if (!verifyAuth(req)) return unauthorized()
-        const body = await req.json()
-        await sql`DELETE FROM infos_details WHERE id = ${body.id}`
-        return Response.json({ ok: true })
-      }
-    },
-    "/api/infos/reorder": {
-      async PUT(req) {
-        if (!verifyAuth(req)) return unauthorized()
-        const body = await req.json()
+  `;
+				return Response.json(infos);
+			},
+			async DELETE(req) {
+				if (!verifyAuth(req)) return unauthorized();
+				const body = await req.json();
+				await sql`DELETE FROM infos_details WHERE id = ${body.id}`;
+				return Response.json({ ok: true });
+			},
+		},
+		"/api/infos/reorder": {
+			async PUT(req) {
+				if (!verifyAuth(req)) return unauthorized();
+				const body = await req.json();
 
-        const updated = await Promise.all(
-          body.order.map(
-            (item: { id: string; sort_order: number }) =>
-              sql`
+				const updated = await Promise.all(
+					body.order.map(
+						(item: { id: string; sort_order: number }) =>
+							sql`
                 UPDATE infos_details
                 SET sort_order = ${item.sort_order}
                 WHERE id = ${item.id}
                 RETURNING *
-              `
-          )
-        )
+              `,
+					),
+				);
 
-        return Response.json(updated.flat())
-      },
-    },
-    "/api/wifi": {
-      async GET(req) {
-        if (!verifyAuth(req)) return unauthorized()
-        const bookletId = new URL(req.url).searchParams.get("id")
-        const wifi = await sql`
+				return Response.json(updated.flat());
+			},
+		},
+		"/api/wifi": {
+			async GET(req) {
+				if (!verifyAuth(req)) return unauthorized();
+				const bookletId = new URL(req.url).searchParams.get("id");
+				const wifi = await sql`
           SELECT wifi_details.*, sections.id as section_id
           FROM sections
           LEFT JOIN wifi_details ON wifi_details.section_id = sections.id
           WHERE sections.property_id = ${bookletId}
           AND sections.type = 'wifi'
-        `
-        return Response.json(wifi)
-      },
-      async POST(req) {
-        if (!verifyAuth(req)) return unauthorized()
-        const body = await req.json()
-        const [wifi] = await sql`
+        `;
+				return Response.json(wifi);
+			},
+			async POST(req) {
+				if (!verifyAuth(req)) return unauthorized();
+				const body = await req.json();
+				const [wifi] = await sql`
           INSERT INTO wifi_details (section_id, network_name, password)
           VALUES (${body.sectionId}, ${body.networkName}, ${body.password})
           ON CONFLICT (section_id) DO UPDATE SET
             network_name = EXCLUDED.network_name,
             password = EXCLUDED.password
           RETURNING *
-        `
-        return Response.json(wifi)
-      }
-    },
-    "/api/contact": {
-      async GET(req) {
-        if (!verifyAuth(req)) return unauthorized()
-        const bookletId = new URL(req.url).searchParams.get("id")
-        const contact = await sql`
+        `;
+				return Response.json(wifi);
+			},
+		},
+		"/api/contact": {
+			async GET(req) {
+				if (!verifyAuth(req)) return unauthorized();
+				const bookletId = new URL(req.url).searchParams.get("id");
+				const contact = await sql`
           SELECT contacts_details.*, sections.id as section_id
           FROM sections
           LEFT JOIN contacts_details ON contacts_details.section_id = sections.id
           WHERE sections.property_id = ${bookletId}
           AND sections.type = 'contacts'
-        `
-        return Response.json(contact)
-      },
-      async POST(req) {
-        if (!verifyAuth(req)) return unauthorized()
-        const body = await req.json()
-        const [contact] = await sql`
+        `;
+				return Response.json(contact);
+			},
+			async POST(req) {
+				if (!verifyAuth(req)) return unauthorized();
+				const body = await req.json();
+				const [contact] = await sql`
     INSERT INTO contacts_details (section_id, name, phone, whatsapp, notes_i18n)
     VALUES (
     ${body.sectionId}, 
@@ -516,13 +611,13 @@ const server = serve({
     ${sql.json(body.notes_i18n ?? {})}
     )
     RETURNING *
-  `
-        return Response.json(contact)
-      },
-      async PUT(req) {
-        if (!verifyAuth(req)) return unauthorized()
-        const body = await req.json()
-        const [contact] = await sql `
+  `;
+				return Response.json(contact);
+			},
+			async PUT(req) {
+				if (!verifyAuth(req)) return unauthorized();
+				const body = await req.json();
+				const [contact] = await sql`
       UPDATE contacts_details
       SET
         name = ${body.name},
@@ -531,32 +626,32 @@ const server = serve({
         notes_i18n = notes_i18n || ${sql.json(body.notes_i18n)}
       WHERE id = ${body.id}
       RETURNING *
-        `
-        return Response.json(contact)
-      },
-      async DELETE(req) {
-        if (!verifyAuth(req)) return unauthorized()
-        const body = await req.json()
-        await sql`DELETE FROM contacts_details WHERE id = ${body.id}`
-        return Response.json({ ok: true })
-      }
-    },
-    "/api/places": {
-      async GET(req) {
-        if (!verifyAuth(req)) return unauthorized()
-        const propertyId = new URL(req.url).searchParams.get("id")
-        const places = await sql`
+        `;
+				return Response.json(contact);
+			},
+			async DELETE(req) {
+				if (!verifyAuth(req)) return unauthorized();
+				const body = await req.json();
+				await sql`DELETE FROM contacts_details WHERE id = ${body.id}`;
+				return Response.json({ ok: true });
+			},
+		},
+		"/api/places": {
+			async GET(req) {
+				if (!verifyAuth(req)) return unauthorized();
+				const propertyId = new URL(req.url).searchParams.get("id");
+				const places = await sql`
           SELECT places_details.*, sections.id as section_id
           FROM sections
           LEFT JOIN places_details ON places_details.section_id = sections.id
           WHERE sections.property_id = ${propertyId}
           AND sections.type = 'places'
-        `
-        return Response.json(places)
-      },
-      async POST(req) {
-        const body = await req.json()
-        const [place] = await sql`
+        `;
+				return Response.json(places);
+			},
+			async POST(req) {
+				const body = await req.json();
+				const [place] = await sql`
     INSERT INTO places_details (section_id, name_i18n, description_i18n, category, address, phone, website)
     VALUES (
       ${body.sectionId},
@@ -568,13 +663,13 @@ const server = serve({
       ${body.website ?? null}
     )
     RETURNING *
-  `
-        return Response.json(place)
-      },
+  `;
+				return Response.json(place);
+			},
 
-      async PUT(req) {
-        const body = await req.json()
-        const [place] = await sql`
+			async PUT(req) {
+				const body = await req.json();
+				const [place] = await sql`
     UPDATE places_details
     SET
       name_i18n        = name_i18n || ${sql.json(body.name_i18n ?? {})},
@@ -584,33 +679,34 @@ const server = serve({
       website          = ${body.website ?? null}
     WHERE id = ${body.id}
     RETURNING *
-  `
-        return Response.json(place)
-      },
-      async DELETE(req) {
-        if (!verifyAuth(req)) return unauthorized()
-        const body = await req.json()
-        const [place] = await sql`DELETE FROM places_details WHERE id = ${body.id} RETURNING *`
-        return Response.json(place)
-      }
-    },
-    "/api/rules": {
-      async GET(req) {
-        if (!verifyAuth(req)) return unauthorized()
-        const propertyId = new URL(req.url).searchParams.get("id")
-        const rules = await sql`
+  `;
+				return Response.json(place);
+			},
+			async DELETE(req) {
+				if (!verifyAuth(req)) return unauthorized();
+				const body = await req.json();
+				const [place] =
+					await sql`DELETE FROM places_details WHERE id = ${body.id} RETURNING *`;
+				return Response.json(place);
+			},
+		},
+		"/api/rules": {
+			async GET(req) {
+				if (!verifyAuth(req)) return unauthorized();
+				const propertyId = new URL(req.url).searchParams.get("id");
+				const rules = await sql`
           SELECT rules_details.*, sections.id as section_id
           FROM sections
           LEFT JOIN rules_details ON rules_details.section_id = sections.id
           WHERE sections.property_id = ${propertyId}
           AND sections.type = 'rules'
-        `
-        return Response.json(rules)
-      },
-      async POST(req) {
-        if (!verifyAuth(req)) return unauthorized()
-        const body = await req.json()
-        const [rules] = await sql`
+        `;
+				return Response.json(rules);
+			},
+			async POST(req) {
+				if (!verifyAuth(req)) return unauthorized();
+				const body = await req.json();
+				const [rules] = await sql`
   INSERT INTO rules_details (section_id, smoking_allowed, pets_allowed, parties_allowed, additional_rules_i18n)
   VALUES (${body.sectionId}, ${body.smokingAllowed}, ${body.petsAllowed}, ${body.partiesAllowed}, ${sql.json(body.additionalRules_i18n ?? {})})
   ON CONFLICT (section_id) DO UPDATE SET
@@ -619,46 +715,47 @@ const server = serve({
     parties_allowed       = EXCLUDED.parties_allowed,
     additional_rules_i18n = rules_details.additional_rules_i18n || EXCLUDED.additional_rules_i18n
   RETURNING *
-`
-        return Response.json(rules)
-      }
-    },
-    "/api/sections": {
-      async GET(req) {
-        if (!verifyAuth(req)) return unauthorized()
-        const propertyId = new URL(req.url).searchParams.get("id")
-        const section = await sql`SELECT * FROM sections WHERE sections.property_id = ${propertyId}`
-        return Response.json(section)
-      },
-      async PUT(req) {
-        if (!verifyAuth(req)) return unauthorized()
-        const body = await req.json()
-        const [properties] = await sql`
+`;
+				return Response.json(rules);
+			},
+		},
+		"/api/sections": {
+			async GET(req) {
+				if (!verifyAuth(req)) return unauthorized();
+				const propertyId = new URL(req.url).searchParams.get("id");
+				const section =
+					await sql`SELECT * FROM sections WHERE sections.property_id = ${propertyId}`;
+				return Response.json(section);
+			},
+			async PUT(req) {
+				if (!verifyAuth(req)) return unauthorized();
+				const body = await req.json();
+				const [properties] = await sql`
           UPDATE sections SET is_visible = ${body.isVisible}, sort_order = ${body.sortOrder}
           WHERE id = ${body.id}
           RETURNING *
-        `
-        return Response.json(properties)
-      },
-    },
-    "/api/staydetails": {
-      async GET(req) {
-        if (!verifyAuth(req)) return unauthorized()
-        const propertyId = new URL(req.url).searchParams.get("id")
+        `;
+				return Response.json(properties);
+			},
+		},
+		"/api/staydetails": {
+			async GET(req) {
+				if (!verifyAuth(req)) return unauthorized();
+				const propertyId = new URL(req.url).searchParams.get("id");
 
-        const stay = await sql`
+				const stay = await sql`
     SELECT stay_details.*, sections.id as section_id
     FROM sections
     LEFT JOIN stay_details ON stay_details.section_id = sections.id
     WHERE sections.property_id = ${propertyId}
     AND sections.type = 'stay'
-  `
-        return Response.json(stay)
-      },
-      async POST(req) {
-        if (!verifyAuth(req)) return unauthorized()
-        const body = await req.json()
-        const [stay] = await sql`
+  `;
+				return Response.json(stay);
+			},
+			async POST(req) {
+				if (!verifyAuth(req)) return unauthorized();
+				const body = await req.json();
+				const [stay] = await sql`
   INSERT INTO stay_details (section_id, checkin, checkout, instructions_i18n, instructions_leave_i18n, key_access_type, key_access_info)
   VALUES (
     ${body.sectionId},
@@ -677,36 +774,36 @@ ON CONFLICT (section_id) DO UPDATE SET
   key_access_type         = EXCLUDED.key_access_type,
 key_access_info = EXCLUDED.key_access_info
   RETURNING *
-`
-        return Response.json(stay)
-      }
-    },
-    "/api/properties": {
-      async GET(req) {
-        const user = verifyAuth(req)
-        if (!user) return unauthorized()
-        const userId = (user as any).id
+`;
+				return Response.json(stay);
+			},
+		},
+		"/api/properties": {
+			async GET(req) {
+				const user = verifyAuth(req);
+				if (!user) return unauthorized();
+				const userId = (user as any).id;
 
-        const properties = await sql`
+				const properties = await sql`
         SELECT * FROM properties
         WHERE owner_id = ${userId}
         ORDER BY created_at DESC
     `;
-        return Response.json(properties);
-      },
-      async POST(req) {
-        const user = verifyAuth(req)
-        if (!user) return unauthorized()
-        const userId = (user as any).id
+				return Response.json(properties);
+			},
+			async POST(req) {
+				const user = verifyAuth(req);
+				if (!user) return unauthorized();
+				const userId = (user as any).id;
 
-        const body = await req.json();
-        const [properties] = await sql`
+				const body = await req.json();
+				const [properties] = await sql`
   INSERT INTO properties (owner_id, title, city, address, img_url, description_i18n)
   VALUES (${userId}, ${body.title}, ${body.city}, ${body.address}, ${body.imgUrl}, ${sql.json(body.description_i18n ?? {})})
   RETURNING *
 `;
 
-        await sql`
+				await sql`
   INSERT INTO sections(property_id, type, title_i18n, sort_order)
   VALUES
     (${properties.id}, 'infos',       ${JSON.stringify(SECTION_TITLES.infos)},       1),
@@ -718,12 +815,12 @@ key_access_info = EXCLUDED.key_access_info
     (${properties.id}, 'golden_book', ${JSON.stringify(SECTION_TITLES.golden_book)}, 7)
 `;
 
-        return Response.json(properties);
-      },
-      async PUT(req) {
-        if (!verifyAuth(req)) return unauthorized()
-        const body = await req.json()
-        const [properties] = await sql`
+				return Response.json(properties);
+			},
+			async PUT(req) {
+				if (!verifyAuth(req)) return unauthorized();
+				const body = await req.json();
+				const [properties] = await sql`
     UPDATE properties
     SET 
       title = ${body.title}, 
@@ -734,31 +831,32 @@ key_access_info = EXCLUDED.key_access_info
       languages = ${body.languages}
     WHERE id = ${body.id}
     RETURNING *
-  `
-        return Response.json(properties)
-      },
-      async DELETE(req) {
-        if (!verifyAuth(req)) return unauthorized()
-        const body = await req.json()
-        const [properties] = await sql`DELETE FROM properties WHERE properties.id = ${body.id} RETURNING *`
-        return Response.json(properties)
-      }
-    },
-    "/api/properties/:id/public": {
-      async GET(req) {
-        const user = verifyAuth(req)
-        if (!user) return unauthorized()
+  `;
+				return Response.json(properties);
+			},
+			async DELETE(req) {
+				if (!verifyAuth(req)) return unauthorized();
+				const body = await req.json();
+				const [properties] =
+					await sql`DELETE FROM properties WHERE properties.id = ${body.id} RETURNING *`;
+				return Response.json(properties);
+			},
+		},
+		"/api/properties/:id/public": {
+			async GET(req) {
+				const user = verifyAuth(req);
+				if (!user) return unauthorized();
 
-        const id = new URL(req.url).pathname.split("/")[3]
-        const [property] = await sql`
+				const id = new URL(req.url).pathname.split("/")[3];
+				const [property] = await sql`
       SELECT * FROM properties WHERE id = ${id}
-    `
-        return Response.json(property)
-      }
-    }
-  },
+    `;
+				return Response.json(property);
+			},
+		},
+	},
 
-  development: process.env.NODE_ENV !== "production",
+	development: process.env.NODE_ENV !== "production",
 });
 
 console.log(`🚀 Server running at ${server.url}`);
